@@ -1,0 +1,8 @@
+numpy
+pandas
+scikit-learn
+requests
+gitpython
+mkdir_p
+flask
+flask_restful
