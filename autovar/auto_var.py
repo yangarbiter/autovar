@@ -13,6 +13,10 @@ from flask_restful import reqparse
 from .base import variables, default_fn_dict, default_val_dict, \
         ParameterAlreadyRanError
 
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
 
@@ -233,7 +237,6 @@ class VariableModel(models.Model):
 """
         for k, v in self.variables.items():
             if v['type'] is "choice":
-                #output += "    " * 1 + "%s = models.CharField(max_length=100)\n" % k
                 output += "    " * 1 + "%s = models.ChoiceField(max_length=100)\n" % k
             elif v['type'] is "val":
                 if v['dtype'] is int:
