@@ -149,9 +149,9 @@ class AutoVar(object):
             return func(*args, **kwargs)
 
     def run_single_experiment(self, experiment_fn: Callable[..., Any],
-                              with_hook: bool=True) -> bool:
+                              with_hook: bool=True,
+                              verbose: int=0) -> bool:
         self._read_only = True
-        logger.info("running: %s", str(self.var_value))
 
         try:
             if with_hook:
@@ -184,7 +184,8 @@ class AutoVar(object):
 
             ret_params.append(params)
             ret_results.append(self.run_single_experiment(experiment_fn,
-                                                          with_hook=with_hook))
+                                                          with_hook=with_hook,
+                                                          verbose=verbose))
             if ret_results[-1] is not False:
                 i += 1
             if max_params > 0 and i >= max_params:
