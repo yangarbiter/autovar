@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Tuple, List, Any, Callable, AnyStr
+from typing import Dict, Tuple, List, Any, Callable, AnyStr, Optional
 import pprint
 import base64
 import logging
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class AutoVar(object):
 
     def __init__(self, before_experiment_hooks=None, after_experiment_hooks=None,
-                 settings: Dict = None):
+                 settings: Dict = None) -> None:
         """
         settings : {
             'server_url': 'http://127.0.0.1:8080/nn_attack/',
@@ -35,8 +35,12 @@ class AutoVar(object):
         self.var_value: Dict[str, Any] = {}
         self.inter_var: Dict[str, Any] = {}
         self.result_fields: List[str] = []
-        self.settings: Dict = settings
-        if 'result_file_dir' in self.settings and self.settings['result_file_dir']:
+        self.settings: Dict
+        if settings is None:
+            self.settings = {}
+        else:
+            self.settings = settings
+        if ('result_file_dir' in self.settings) and self.settings['result_file_dir']:
             mkdir_p(self.settings['result_file_dir'])
 
         repo = git.Repo(search_parent_directories=True)
@@ -46,6 +50,7 @@ class AutoVar(object):
         self.before_experiment_hooks = before_experiment_hooks
 
         self._read_only: bool = False
+        self._no_hooks: bool = False
 
     def add_variable_class(self, variable_class, var_name: str = None):
         if var_name is None:
@@ -171,7 +176,7 @@ class AutoVar(object):
                         grid_params: Dict[AnyStr, List],
                         with_hook: bool=True,
                         max_params: int=-1, 
-                        verbose: int=0) -> (Dict, Dict):
+                        verbose: int=0) -> Tuple[List, List]:
         ret_params = []
         ret_results = []
         grid = ParameterGrid(grid_params)
@@ -184,7 +189,7 @@ class AutoVar(object):
 
             ret_params.append(params)
             ret_results.append(self.run_single_experiment(experiment_fn,
-                                                          with_hook=with_hook,
+                                                          with_hook=(with_hook and (not self._no_hooks)),
                                                           verbose=verbose))
             if ret_results[-1] is not False:
                 i += 1
@@ -201,16 +206,23 @@ class AutoVar(object):
         _ = hash(tuple(sorted(self.var_value.items())))
         return base64.b64encode(str(_).encode()).decode()
 
-    def parse_argparse(self):
+    def parse_argparse(self, args: Optional[List[str]]=None):
         parser = argparse.ArgumentParser()
+        parser.add_argument('--no-hooks', required=False, action='store_true',
+                            help="run without the hooks")
+
         for k, v in self.variables.items():
             if v['type'] == 'choice':
                 parser.add_argument(f'--{k}', type=str, required=True,
                     choices=[kk for kk, _ in v['argument_fn'].items()])
             else:
                 parser.add_argument(f'--{k}', type=v['dtype'], required=True)
-        args = parser.parse_args()
-        self.set_variable_value_by_dict(vars(args))
+        args = parser.parse_args(args=args)
+        self._no_hooks = args.no_hooks
+
+        variables = vars(args)
+        del variables['no_hooks']
+        self.set_variable_value_by_dict(variables)
     
     def get_reqparse_parser(self):
         parser = reqparse.RequestParser()

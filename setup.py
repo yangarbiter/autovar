@@ -26,9 +26,10 @@ setup(
     keywords='',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     install_requires=install_requires,
+    test_suit='autovar',
     extras_require={
         'dev': ['pylint'],
-        'test': ['coverage', 'pylint'],
+        'test': ['coverage', 'pylint', 'pytest'],
     },
     package_data={},
     entry_points={},
