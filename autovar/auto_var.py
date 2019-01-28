@@ -93,7 +93,7 @@ class AutoVar(object):
             self.set_variable_value(k, v)
 
     def _run_before_hooks(self):
-        if self.before_experiment_hooks is not None:
+        if not self._no_hooks and self.before_experiment_hooks is not None:
             for hook_fn in self.before_experiment_hooks:
                 try:
                     hook_fn(self)
@@ -106,7 +106,7 @@ class AutoVar(object):
         return True
 
     def _run_after_hooks(self, ret):
-        if self.after_experiment_hooks is not None:
+        if not self._no_hooks and self.after_experiment_hooks is not None:
             for hook_fn in self.after_experiment_hooks:
                 hook_fn(self, ret)
 
