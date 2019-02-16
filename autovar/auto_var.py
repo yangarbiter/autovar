@@ -9,6 +9,7 @@ import git
 from sklearn.model_selection import ParameterGrid
 from mkdir_p import mkdir_p
 from flask_restful import reqparse
+from joblib import Parallel, delayed
 
 from .base import variables, default_fn_dict, default_val_dict, \
         ParameterAlreadyRanError
@@ -172,30 +173,63 @@ class AutoVar(object):
             self._read_only = False
         return ret
 
+    def _check_var_argument(self, var_name: str, argument: str):
+        if self.variables[var_name]["type"] != "val" \
+            and argument not in self.variables[var_name]["argument_fn"]:
+            raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
+
+    def _check_grid_params(self, grid_params: Dict[AnyStr, List]) -> bool:
+        for k, v in grid_params.items():
+            for i in v:
+                self._check_var_argument(k, i)
+        return True
+
     def run_grid_params(self, experiment_fn: Callable[..., Any],
                         grid_params: Dict[AnyStr, List],
                         with_hook: bool=True,
                         max_params: int=-1, 
-                        verbose: int=0) -> Tuple[List, List]:
+                        verbose: int=0,
+                        n_jobs: int=-1,
+                        pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
+        self._check_grid_params(grid_params)
+
         ret_params = []
         ret_results = []
         grid = ParameterGrid(grid_params)
-        prev_state = deepcopy(self.var_value)
-        i = 0
-        for params in grid:
-            self.set_variable_value_by_dict(params)
+        parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
+                            pre_dispatch=pre_dispatch)
+
+        #prev_state = deepcopy(self.var_value)
+
+        if max_params != -1:
+            ret_params = [list(grid)[:max_params]]
+        else:
+            ret_params = list(grid)
+
+        def _helper(auto_var, params):
+            auto_var.set_variable_value_by_dict(params)
             if verbose:
                 logger.info("Running parameter:" + str(params))
+            results = auto_var.run_single_experiment(experiment_fn,
+                                        with_hook=(with_hook and (not self._no_hooks)),
+                                        verbose=verbose)
+            return results
 
-            ret_params.append(params)
-            ret_results.append(self.run_single_experiment(experiment_fn,
-                                                          with_hook=(with_hook and (not self._no_hooks)),
-                                                          verbose=verbose))
-            if ret_results[-1] is not False:
-                i += 1
-            if max_params > 0 and i >= max_params:
-                break
-        self.set_variable_value_by_dict(prev_state)
+        with parallel:
+            out = parallel(delayed(_helper)(deepcopy(self), params)
+                               for params in ret_params)
+
+        #for params in ret_params:
+        #    self.set_variable_value_by_dict(params)
+        #    if verbose:
+        #        logger.info("Running parameter:" + str(params))
+        #    ret_results.append(
+        #        self.run_single_experiment(experiment_fn,
+        #                                   with_hook=(with_hook and (not self._no_hooks)),
+        #                                   verbose=verbose)
+        #    )
+
+        #self.set_variable_value_by_dict(prev_state)
         return ret_params, ret_results
 
     def summary(self) -> None:
