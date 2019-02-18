@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Tuple, List, Any, Callable, AnyStr, Optional
+from typing import Dict, Tuple, List, Any, Callable, AnyStr, Optional, Union
 import pprint
 import base64
 import logging
@@ -185,23 +185,24 @@ class AutoVar(object):
         return True
 
     def run_grid_params(self, experiment_fn: Callable[..., Any],
-                        grid_params: Dict[AnyStr, List],
+                        grid_params: Union(Dict[AnyStr, List], List[Dict[AnyStr, List]]),
                         with_hook: bool=True,
                         max_params: int=-1,
                         verbose: int=0,
                         n_jobs: int=-1,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
-        self._check_grid_params(grid_params)
+        for grid_param in grid_params:
+            self._check_grid_params(grid_param)
 
-        grid = ParameterGrid(grid_params)
-        parallel = Parallel(
-            n_jobs=n_jobs, verbose=verbose,
-                            pre_dispatch=pre_dispatch)
+            grid = ParameterGrid(grid_param)
+            parallel = Parallel(
+                n_jobs=n_jobs, verbose=verbose,
+                                pre_dispatch=pre_dispatch)
 
-        if max_params != -1:
-            ret_params = [list(grid)[:max_params]]
-        else:
-            ret_params = list(grid)
+            if max_params != -1:
+                ret_params = [list(grid)[:max_params]]
+            else:
+                ret_params = list(grid)
 
         def _helper(auto_var, params):
             auto_var.set_variable_value_by_dict(params)
