@@ -187,19 +187,16 @@ class AutoVar(object):
     def run_grid_params(self, experiment_fn: Callable[..., Any],
                         grid_params: Dict[AnyStr, List],
                         with_hook: bool=True,
-                        max_params: int=-1, 
+                        max_params: int=-1,
                         verbose: int=0,
                         n_jobs: int=-1,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
         self._check_grid_params(grid_params)
 
-        ret_params = []
-        ret_results = []
         grid = ParameterGrid(grid_params)
-        parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
+        parallel = Parallel(
+            n_jobs=n_jobs, verbose=verbose,
                             pre_dispatch=pre_dispatch)
-
-        #prev_state = deepcopy(self.var_value)
 
         if max_params != -1:
             ret_params = [list(grid)[:max_params]]
@@ -216,20 +213,9 @@ class AutoVar(object):
             return results
 
         with parallel:
-            out = parallel(delayed(_helper)(deepcopy(self), params)
-                               for params in ret_params)
+            ret_results = parallel(delayed(_helper)(deepcopy(self), params)
+                                   for params in ret_params)
 
-        #for params in ret_params:
-        #    self.set_variable_value_by_dict(params)
-        #    if verbose:
-        #        logger.info("Running parameter:" + str(params))
-        #    ret_results.append(
-        #        self.run_single_experiment(experiment_fn,
-        #                                   with_hook=(with_hook and (not self._no_hooks)),
-        #                                   verbose=verbose)
-        #    )
-
-        #self.set_variable_value_by_dict(prev_state)
         return ret_params, ret_results
 
     def summary(self) -> None:
