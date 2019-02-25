@@ -184,25 +184,30 @@ class AutoVar(object):
                 self._check_var_argument(k, i)
         return True
 
-    def run_grid_params(self, experiment_fn: Callable[..., Any],
-                        grid_params: Union(Dict[AnyStr, List], List[Dict[AnyStr, List]]),
+    def run_grid_params(self,
+                        experiment_fn: Callable[..., Any],
+                        grid_params: Union[Dict[AnyStr, List], List[Dict[AnyStr, List]]],
                         with_hook: bool=True,
                         max_params: int=-1,
                         verbose: int=0,
                         n_jobs: int=-1,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
-        for grid_param in grid_params:
-            self._check_grid_params(grid_param)
 
-            grid = ParameterGrid(grid_param)
-            parallel = Parallel(
-                n_jobs=n_jobs, verbose=verbose,
-                                pre_dispatch=pre_dispatch)
+        if isinstance(grid_params, list):
+            ret_params = []
+            for grid_param in grid_params:
+                self._check_grid_params(grid_param)
 
-            if max_params != -1:
-                ret_params = [list(grid)[:max_params]]
-            else:
-                ret_params = list(grid)
+                grid = ParameterGrid(grid_param)
+                ret_params += list(grid)
+        else:
+            ret_params = list(ParameterGrid(grid_params))
+
+        if max_params != -1:
+            ret_params = ret_params[:max_params]
+
+        parallel = Parallel(
+                n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
 
         def _helper(auto_var, params):
             auto_var.set_variable_value_by_dict(params)
@@ -244,7 +249,7 @@ class AutoVar(object):
         variables = vars(args)
         del variables['no_hooks']
         self.set_variable_value_by_dict(variables)
-    
+
     def get_reqparse_parser(self):
         parser = reqparse.RequestParser()
         for k, v in self.variables.items():
