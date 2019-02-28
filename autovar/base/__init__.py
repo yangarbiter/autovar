@@ -17,13 +17,12 @@ default_val_dict = {
 }
 
 class VariableClass(object):
-    var_name = None
-
+    var_name: str = ""
 
 class RegisteringChoiceType(type):
     def __init__(cls, name, bases, attrs):
         cls.arguments = []
-        if hasattr(cls, 'var_name') and cls.var_name is not None:
+        if hasattr(cls, 'var_name') and not cls.var_name:
             name = cls.var_name
         elif not hasattr(cls, 'var_name'):
             cls.var_name = name
@@ -35,7 +34,6 @@ class RegisteringChoiceType(type):
                 argument = key if not prop['argument'] else prop['argument']
                 variables.setdefault(var_name, deepcopy(default_fn_dict))["argument_fn"][argument] = val.__func__
                 cls.arguments.append(argument)
-
 
 class ParameterAlreadyRanError(Exception):
     def __init__(self, message="", errors=""):

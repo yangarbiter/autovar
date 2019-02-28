@@ -1,9 +1,10 @@
 from copy import deepcopy
-from typing import Dict, Tuple, List, Any, Callable, AnyStr, Optional, Union
+from typing import Dict, Tuple, List, Any, Callable, Optional, Union
 import pprint
 import base64
 import logging
 import argparse
+import re
 
 import git
 from sklearn.model_selection import ParameterGrid
@@ -69,10 +70,81 @@ class AutoVar(object):
         d['dtype'] = dtype
         self.variables.setdefault(var_name, d)
 
+    def get_var(self, var_name: str, *args, **kwargs):
+        """[summary]
+
+        Arguments:
+            var_name {[type]} -- [description]
+            argument {[type]} -- [description]
+
+        Raises:
+            ValueError -- [description]
+            ValueError -- [description]
+
+        Returns:
+            [type] -- [description]
+        """
+        if var_name not in self.variables:
+            raise ValueError('Variable "%s" not registered.' % var_name)
+        if var_name not in self.var_value:
+            raise ValueError('Value for variable "%s" is not assigned.' % var_name)
+        argument = self.var_value[var_name]
+
+        if self.variables[var_name]["type"] == "val":
+            return argument
+        else:
+            if argument in self.variables[var_name]["argument_fn"]:
+                func = self.variables[var_name]["argument_fn"][argument]
+            else:
+                for arg_template, func in self.variables[var_name]["argument_fn"]:
+                    m = re.match(arg_template, argument)
+                    if m is not None:
+                        kwargs.update(m.groupdict())
+                        break
+                raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
+
+            kwargs['auto_var'] = self
+            kwargs['var_value'] = self.var_value
+            kwargs['inter_var'] = self.inter_var
+            return func(*args, **kwargs)
+
+    def match_variable(self, var_name: str, argument):
+        if self.variables[var_name]["type"] == "val":
+            return True
+        else:
+            if argument in self.variables[var_name]["argument_fn"]:
+                return True
+            else:
+                for arg_template, func in self.variables[var_name]["argument_fn"]:
+                    m = re.match(arg_template, argument)
+                    if m is not None:
+                        #if m.group(0) == argument:
+                        #    return true
+                        return True
+        return None
+
+        
+
     def get_variable_value(self, var_name: str):
         if var_name not in self.var_value:
             raise ValueError(f"{var_name} not in var_value")
         return self.var_value[var_name]
+
+    def get_var_with_argument(self, var_name: str, argument: str, *args, **kwargs):
+        if self.variables[var_name]["type"] == "val":
+            return argument
+        else:
+            if argument not in self.variables[var_name]["argument_fn"]:
+                raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
+            func = self.variables[var_name]["argument_fn"][argument]
+            kwargs['auto_var'] = self
+            kwargs['var_value'] = self.var_value
+            kwargs['inter_var'] = self.inter_var
+            return func(*args, **kwargs)
+
+    def get_intermidiate_variable(self, var_name: str):
+        return self.inter_var[var_name]
+
 
     def set_variable_value(self, var_name: str, value) -> None:
         if self._read_only:
@@ -83,9 +155,6 @@ class AutoVar(object):
 
     def set_intermidiate_variable(self, var_name: str, value) -> None:
         self.inter_var[var_name] = value
-
-    def get_intermidiate_variable(self, var_name: str):
-        return self.inter_var[var_name]
 
     def set_variable_value_by_dict(self, var_value: Dict[str, Any]) -> None:
         if self._read_only:
@@ -110,50 +179,6 @@ class AutoVar(object):
         if not self._no_hooks and self.after_experiment_hooks is not None:
             for hook_fn in self.after_experiment_hooks:
                 hook_fn(self, ret)
-
-    def get_var_with_argument(self, var_name: str, argument: str, *args, **kwargs):
-        if self.variables[var_name]["type"] == "val":
-            return argument
-        else:
-            if argument not in self.variables[var_name]["argument_fn"]:
-                raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
-            func = self.variables[var_name]["argument_fn"][argument]
-            kwargs['auto_var'] = self
-            kwargs['var_value'] = self.var_value
-            kwargs['inter_var'] = self.inter_var
-            return func(*args, **kwargs)
-
-    def get_var(self, var_name: str, *args, **kwargs):
-        """[summary]
-
-        Arguments:
-            var_name {[type]} -- [description]
-            argument {[type]} -- [description]
-
-        Raises:
-            ValueError -- [description]
-            ValueError -- [description]
-
-        Returns:
-            [type] -- [description]
-        """
-        if var_name not in self.variables:
-            raise ValueError('Variable "%s" not registered.' % var_name)
-        if var_name not in self.var_value:
-            raise ValueError('Value for variable "%s" is not assigned.' % var_name)
-        argument = self.var_value[var_name]
-
-        if self.variables[var_name]["type"] == "val":
-            return argument
-        else:
-            if argument not in self.variables[var_name]["argument_fn"]:
-                raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
-            func = self.variables[var_name]["argument_fn"][argument]
-            kwargs['auto_var'] = self
-            kwargs['var_value'] = self.var_value
-            kwargs['inter_var'] = self.inter_var
-            return func(*args, **kwargs)
-
     def run_single_experiment(self, experiment_fn: Callable[..., Any],
                               with_hook: bool=True,
                               verbose: int=0) -> bool:
@@ -178,7 +203,7 @@ class AutoVar(object):
             and argument not in self.variables[var_name]["argument_fn"]:
             raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
 
-    def _check_grid_params(self, grid_params: Dict[AnyStr, List]) -> bool:
+    def _check_grid_params(self, grid_params: Dict[str, List]) -> bool:
         for k, v in grid_params.items():
             for i in v:
                 self._check_var_argument(k, i)
@@ -186,7 +211,7 @@ class AutoVar(object):
 
     def run_grid_params(self,
                         experiment_fn: Callable[..., Any],
-                        grid_params: Union[Dict[AnyStr, List], List[Dict[AnyStr, List]]],
+                        grid_params: Union[Dict[str, List], List[Dict[str, List]]],
                         with_hook: bool=True,
                         max_params: int=-1,
                         verbose: int=0,
@@ -194,7 +219,7 @@ class AutoVar(object):
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
 
         if isinstance(grid_params, list):
-            ret_params = []
+            ret_params: List = []
             for grid_param in grid_params:
                 self._check_grid_params(grid_param)
 
@@ -243,10 +268,10 @@ class AutoVar(object):
                     choices=[kk for kk, _ in v['argument_fn'].items()])
             else:
                 parser.add_argument(f'--{k}', type=v['dtype'], required=True)
-        args = parser.parse_args(args=args)
-        self._no_hooks = args.no_hooks
+        parsed_args = parser.parse_args(args=args)
+        self._no_hooks = parsed_args.no_hooks
 
-        variables = vars(args)
+        variables = vars(parsed_args)
         del variables['no_hooks']
         self.set_variable_value_by_dict(variables)
 
