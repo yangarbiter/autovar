@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from setuptools import setup, find_packages
 from os import path
 
@@ -29,7 +31,7 @@ setup(
     test_suit='autovar',
     extras_require={
         'dev': ['pylint'],
-        'test': ['coverage', 'pylint', 'pytest'],
+        'test': ['coverage', 'pylint', 'mypy'],
     },
     package_data={},
     entry_points={},
