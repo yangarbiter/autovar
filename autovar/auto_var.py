@@ -224,6 +224,7 @@ class AutoVar(object):
                         max_params: int=-1,
                         verbose: int=0,
                         n_jobs: int=-1,
+                        backend: Optional[str]=None,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
 
         if isinstance(grid_params, list):
@@ -239,8 +240,8 @@ class AutoVar(object):
         if max_params != -1:
             ret_params = ret_params[:max_params]
 
-        parallel = Parallel(
-                n_jobs=n_jobs, verbose=verbose, pre_dispatch=pre_dispatch)
+        parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
+                            backend=backend, pre_dispatch=pre_dispatch)
 
         def _helper(auto_var, params):
             auto_var.set_variable_value_by_dict(params)
