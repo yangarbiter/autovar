@@ -12,8 +12,8 @@ from mkdir_p import mkdir_p
 from flask_restful import reqparse
 from joblib import Parallel, delayed
 
-from .base import variables, default_fn_dict, default_val_dict, \
-        ParameterAlreadyRanError
+from .base import default_fn_dict, default_val_dict, \
+        ParameterAlreadyRanError, VariableValueNotSetError, VariableNotRegisteredError
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -32,7 +32,7 @@ class AutoVar(object):
             'result_file_dir': './results/'
         }
         """
-        self.variables: Dict[str, dict] = variables
+        self.variables: Dict[str, dict] = {}
         self.var_class: Dict[str, Any] = {}
         self.var_value: Dict[str, Any] = {}
         self.inter_var: Dict[str, Any] = {}
@@ -63,7 +63,8 @@ class AutoVar(object):
         if var_name in self.var_class:
             raise ValueError('Don\'t register class "{}" twice '.format(var_name))
         self.var_class[var_name] = variable_class
-        self.variables.setdefault(var_name, deepcopy(default_fn_dict))
+        #self.variables.setdefault(var_name, deepcopy(default_fn_dict))
+        self.variables.update(variable_class.__class__.variables)
 
     def add_variable(self, var_name: str, dtype) -> None:
         d = deepcopy(default_val_dict)
@@ -85,9 +86,9 @@ class AutoVar(object):
             [type] -- [description]
         """
         if var_name not in self.variables:
-            raise ValueError('Variable "%s" not registered.' % var_name)
+            raise VariableNotRegisteredError('Variable "%s" not registered.' % var_name)
         if var_name not in self.var_value:
-            raise ValueError('Value for variable "%s" is not assigned.' % var_name)
+            raise VariableValueNotSetError('Value for variable "%s" is not assigned.' % var_name)
         argument = self.var_value[var_name]
 
         if self.variables[var_name]["type"] == "val":
@@ -96,12 +97,14 @@ class AutoVar(object):
             if argument in self.variables[var_name]["argument_fn"]:
                 func = self.variables[var_name]["argument_fn"][argument]
             else:
-                for arg_template, func in self.variables[var_name]["argument_fn"]:
+                m = None
+                for arg_template, func in self.variables[var_name]["argument_fn"].items():
                     m = re.match(arg_template, argument)
                     if m is not None:
                         kwargs.update(m.groupdict())
                         break
-                raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
+                if m is None:
+                    raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
 
             kwargs['auto_var'] = self
             kwargs['var_value'] = self.var_value
@@ -109,21 +112,20 @@ class AutoVar(object):
             return func(*args, **kwargs)
 
     def match_variable(self, var_name: str, argument):
+        if argument is None:
+            return False
+
         if self.variables[var_name]["type"] == "val":
             return True
         else:
             if argument in self.variables[var_name]["argument_fn"]:
                 return True
             else:
-                for arg_template, func in self.variables[var_name]["argument_fn"]:
+                for arg_template in self.variables[var_name]["argument_fn"]:
                     m = re.match(arg_template, argument)
                     if m is not None:
-                        #if m.group(0) == argument:
-                        #    return true
                         return True
         return None
-
-        
 
     def get_variable_value(self, var_name: str):
         if var_name not in self.var_value:
@@ -145,13 +147,13 @@ class AutoVar(object):
     def get_intermidiate_variable(self, var_name: str):
         return self.inter_var[var_name]
 
-
     def set_variable_value(self, var_name: str, value) -> None:
         if self._read_only:
             raise ValueError("should not set variable value while read_only")
         if var_name not in self.var_value:
             pass
         self.var_value[var_name] = value
+        self._check_var_argument(var_name=var_name, argument=value)
 
     def set_intermidiate_variable(self, var_name: str, value) -> None:
         self.inter_var[var_name] = value
@@ -179,11 +181,11 @@ class AutoVar(object):
         if not self._no_hooks and self.after_experiment_hooks is not None:
             for hook_fn in self.after_experiment_hooks:
                 hook_fn(self, ret)
+
     def run_single_experiment(self, experiment_fn: Callable[..., Any],
                               with_hook: bool=True,
                               verbose: int=0) -> bool:
         self._read_only = True
-
         try:
             if with_hook:
                 ret = self._run_before_hooks()
@@ -198,12 +200,18 @@ class AutoVar(object):
             self._read_only = False
         return ret
 
-    def _check_var_argument(self, var_name: str, argument: str):
+    def _check_var_argument(self, var_name: str, argument):
         if self.variables[var_name]["type"] != "val" \
-            and argument not in self.variables[var_name]["argument_fn"]:
-            raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
+            and not self.match_variable(var_name, argument):
+                raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
+        elif self.variables[var_name]["type"] == "val" \
+            and not isinstance(argument, self.variables[var_name]['dtype']):
+            raise TypeError('Argument "%s" not in the correct type "%s".' % (
+                            type(argument), self.variables[var_name]['dtype']))
 
     def _check_grid_params(self, grid_params: Dict[str, List]) -> bool:
+        # TODO check duplicated params
+        # TODO duplicated check var argument since set_param_value will check
         for k, v in grid_params.items():
             for i in v:
                 self._check_var_argument(k, i)
@@ -262,12 +270,14 @@ class AutoVar(object):
         parser.add_argument('--no-hooks', required=False, action='store_true',
                             help="run without the hooks")
 
-        for k, v in self.variables.items():
+        for var_name, v in self.variables.items():
             if v['type'] == 'choice':
-                parser.add_argument(f'--{k}', type=str, required=True,
-                    choices=[kk for kk, _ in v['argument_fn'].items()])
+                #parser.add_argument(f'--{k}', type=str, required=True,
+                #    choices=[kk for kk, _ in v['argument_fn'].items()])
+                parser.add_argument(f'--{var_name}', type=str, required=True,
+                                    action=make_action(self, var_name))
             else:
-                parser.add_argument(f'--{k}', type=v['dtype'], required=True)
+                parser.add_argument(f'--{var_name}', type=v['dtype'], required=True)
         parsed_args = parser.parse_args(args=args)
         self._no_hooks = parsed_args.no_hooks
 
@@ -345,3 +355,14 @@ class ResultFileModel(serializers.ModelSerializer):
         fields = ('file_field', 'variable')
 """
         print(output)
+
+
+def make_action(auto_var, var_name):
+    class CheckArgParseAction(argparse.Action):
+        def __call__(self, parser, args, values, option_string=None):
+            argument = values
+            if not auto_var.match_variable(var_name, argument):
+                raise argparse.ArgumentTypeError(
+                    'Argument "%s" not in Variable "%s".' % (argument, var_name))
+            setattr(args, self.dest, values)
+    return CheckArgParseAction
