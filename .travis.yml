@@ -3,15 +3,15 @@ python:
   - "3.6"
   - "3.7-dev"
   - "3.8-dev"
+  - "nightly"
 os:
   - linux
 sudo: required
 dist: xenial
 matrix:
-  include:
-    - os: linux
-      python: "nightly"
   allow_failures:
+    - os: linux
+      python: "3.8-dev"
     - os: linux
       python: "nightly"
 
