@@ -136,9 +136,17 @@ class AutoVar(object):
         if self.variables[var_name]["type"] == "val":
             return argument
         else:
-            if argument not in self.variables[var_name]["argument_fn"]:
-                raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
-            func = self.variables[var_name]["argument_fn"][argument]
+            if argument in self.variables[var_name]["argument_fn"]:
+                func = self.variables[var_name]["argument_fn"][argument]
+            else:
+                m = None
+                for arg_template, func in self.variables[var_name]["argument_fn"].items():
+                    m = re.match(arg_template, argument)
+                    if m is not None:
+                        kwargs.update(m.groupdict())
+                        break
+                if m is None:
+                    raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
             kwargs['auto_var'] = self
             kwargs['var_value'] = self.var_value
             kwargs['inter_var'] = self.inter_var

@@ -74,6 +74,8 @@ class TestAutovar(unittest.TestCase):
         self.assertEqual(auto_var.get_var('ord'), 1)
         self.assertEqual(auto_var.get_var('random_seed'), 1126)
         self.assertEqual(len(auto_var.get_var('dataset')[0]), 200) 
+        self.assertEqual(
+            len(auto_var.get_var_with_argument('dataset', 'halfmoon_300')[0]), 300) 
 
         with self.assertRaises(ValueError):
             auto_var.set_variable_value_by_dict({'ord': 'l2'})
