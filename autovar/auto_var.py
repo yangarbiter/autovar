@@ -9,7 +9,6 @@ import re
 import git
 from sklearn.model_selection import ParameterGrid
 from mkdir_p import mkdir_p
-from flask_restful import reqparse
 from joblib import Parallel, delayed
 
 from .base import default_fn_dict, default_val_dict, \
@@ -293,77 +292,6 @@ class AutoVar(object):
         variables = vars(parsed_args)
         del variables['no_hooks']
         self.set_variable_value_by_dict(variables)
-
-    def get_reqparse_parser(self):
-        parser = reqparse.RequestParser()
-        for k, v in self.variables.items():
-            if v['type'] == 'choice':
-                parser.add_argument(f'{k}', type=str, required=True,
-                    choices=[kk for kk, _ in v['argument_fn'].items()])
-            else:
-                parser.add_argument(f'{k}', type=v['dtype'], required=True)
-        return parser
-
-    def generate_django_models_py(self):
-        output = """
-from django.db import models
-"""
-        for k, v in self.variables.items():
-            if v['type'] is "choice":
-                choices = [kk for kk, _, in v['argument_fn'].items()]
-                output += "%s = %s\n" % (k.upper(), str(choices))
-
-        output += """\n
-class VariableModel(models.Model):
-    git_hash = models.CharField(max_length=100)
-    create_time = models.DateField(auto_now_add=True)
-"""
-        for k, v in self.variables.items():
-            if v['type'] is "choice":
-                output += "    " * 1 + "%s = models.ChoiceField(max_length=100)\n" % k
-            elif v['type'] is "val":
-                if v['dtype'] is int:
-                    output += "    " * 1 + "%s = models.IntegerField()\n" % k
-                elif v['dtype'] is float:
-                    output += "    " * 1 + "%s = models.FloatField()\n" % k
-                else:
-                    output += "    " * 1 + "%s = models.CharField(max_length=100)\n" % k
-
-        output += """\n
-class ResultFileModel(models.Model):
-    file_field = models.FileField()
-    create_time = models.DateField(auto_now_add=True)
-    variable = models.ForeignKey(
-        'VariableModel',
-        on_delete=models.CASCADE,
-    )
-"""
-        print(output)
-
-    def generate_django_serializers_py(self):
-        output = """
-from rest_framework import serializers
-
-from .models import VariableModel
-
-
-class VariableSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VariableModel
-        fields = %s
-"""
-        fields = ['id', 'unique_name', 'create_time']
-        fields += [k for k in self.variables.keys()]
-
-        output = output % str(tuple(fields))
-
-        output += """\n
-class ResultFileModel(serializers.ModelSerializer):
-    class Meta:
-        model = VariableModel
-        fields = ('file_field', 'variable')
-"""
-        print(output)
 
 
 def make_action(auto_var, var_name):

@@ -4,6 +4,4 @@ scikit-learn
 requests
 gitpython
 mkdir_p
-flask
-flask_restful
 joblib
