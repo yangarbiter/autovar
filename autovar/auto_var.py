@@ -7,6 +7,7 @@ import argparse
 import re
 
 import git
+import git.exc
 from sklearn.model_selection import ParameterGrid
 from mkdir_p import mkdir_p
 from joblib import Parallel, delayed
@@ -44,8 +45,11 @@ class AutoVar(object):
         if ('result_file_dir' in self.settings) and self.settings['result_file_dir']:
             mkdir_p(self.settings['result_file_dir'])
 
-        repo = git.Repo(search_parent_directories=True)
-        self.var_value['git_hash'] = repo.head.object.hexsha
+        try:
+            self.repo = git.Repo(search_parent_directories=True)
+            self.var_value['git_hash'] = self.repo.head.object.hexsha
+        except git.exc.InvalidGitRepositoryError:
+            logger.warning("Git repository not found.")
 
         self.after_experiment_hooks = after_experiment_hooks
         self.before_experiment_hooks = before_experiment_hooks

@@ -84,6 +84,26 @@ class TestAutovar(unittest.TestCase):
             auto_var.set_variable_value_by_dict({'random_seed': '1126.0'})
 
 
+    def test_run_grid(self):
+        auto_var = AutoVar()
+        auto_var.add_variable_class(OrdVarClass())
+        auto_var.add_variable_class(DatasetVarClass())
+        auto_var.add_variable('random_seed', int)
+
+        grid_params = {
+            "ord": ['1', '2'],
+            "dataset": ['halfmoon_50', 'halfmoon_10'],
+            "random_seed": [1126],
+        }
+        def fn(auto_var):
+            return auto_var.var_value
+        params, results = auto_var.run_grid_params(fn, grid_params=grid_params, n_jobs=1)
+
+        del results[0]['git_hash']
+        self.assertEqual(params[0], {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126})
+        self.assertEqual(params[0], results[0])
+
+
 
 if __name__ == '__main__':
     unittest.main()

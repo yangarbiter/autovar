@@ -25,6 +25,7 @@ class RegisteringChoiceType(type):
         if hasattr(cls, 'var_name') and cls.var_name is not None:
             name = cls.var_name
         elif not hasattr(cls, 'var_name'):
+            # shouldn't happend
             cls.var_name = name
 
         for key, val in attrs.items():
