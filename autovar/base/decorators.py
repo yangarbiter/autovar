@@ -10,3 +10,8 @@ def register_var(var_type: str='fn_name', var_name: str=None, argument: str=None
         func.register = {'var_type': var_type, 'var_name': var_name, 'argument': argument}
         return func
     return decorator
+
+
+def require():
+    # TODO
+    pass

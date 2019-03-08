@@ -22,6 +22,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def add_all_commit(repo, commit_msg="update"):
+    repo.git.commit('-m', commit_msg)
+    files = repo.git.diff(None, name_only=True)
+    for f in files.split('\n'):
+        repo.git.add(f)
+
 class AutoVar(object):
 
     def __init__(self, before_experiment_hooks=None, after_experiment_hooks=None,
@@ -233,10 +239,16 @@ class AutoVar(object):
                         grid_params: Union[Dict[str, List], List[Dict[str, List]]],
                         with_hook: bool=True,
                         max_params: int=-1,
+                        commit_before_run: bool=False,
                         verbose: int=0,
                         n_jobs: int=-1,
                         backend: Optional[str]=None,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
+
+        if commit_before_run:
+            if self.repo is None:
+                raise ValueError("Not currently in git repo.")
+            add_all_commit(self.repo)
 
         if isinstance(grid_params, list):
             ret_params: List = []

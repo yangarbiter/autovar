@@ -13,10 +13,6 @@ from ..base import ParameterAlreadyRanError
 
 _logger = logging.getLogger(__name__)
 
-def git_commit(auto_var):
-    if auto_var.repo is None:
-        raise ValueError("Not in a git repository.")
-
 def check_result_file_exist(auto_var, get_name_fn=None):
     if get_name_fn is None:
         get_name_fn = lambda x: x.generate_name()
