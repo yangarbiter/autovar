@@ -241,6 +241,7 @@ class AutoVar(object):
                         max_params: int=-1,
                         commit_before_run: bool=False,
                         verbose: int=0,
+                        allow_failure: bool=True,
                         n_jobs: int=-1,
                         backend: Optional[str]=None,
                         pre_dispatch: str='2 * n_jobs') -> Tuple[List, List]:
@@ -270,9 +271,16 @@ class AutoVar(object):
             auto_var.set_variable_value_by_dict(params)
             if verbose:
                 logger.info("Running parameter:" + str(params))
-            results = auto_var.run_single_experiment(experiment_fn,
-                                        with_hook=(with_hook and (not self._no_hooks)),
-                                        verbose=verbose)
+            try:
+                results = auto_var.run_single_experiment(experiment_fn,
+                                            with_hook=(with_hook and (not self._no_hooks)),
+                                            verbose=verbose)
+            except Exception as e:
+                if allow_failure:
+                    logger.error("Error with " + str(params))
+                else:
+                    raise e
+
             return results
 
         with parallel:
