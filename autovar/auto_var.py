@@ -289,6 +289,7 @@ class AutoVar(object):
                     logger.error("Error with " + str(params))
                 else:
                     raise e
+                results = None
 
             return results
 
