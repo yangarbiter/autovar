@@ -5,6 +5,7 @@ import base64
 import logging
 import argparse
 import re
+import time
 
 import git
 import git.exc
@@ -209,7 +210,15 @@ class AutoVar(object):
             else:
                 ret = True
             if ret:
+                start_time = time.time()
                 ret = experiment_fn(self)
+                end_time = time.time()
+                if isinstance(ret, dict):
+                    ret['running_time'] = end_time - start_time
+                else:
+                    # return value is not dict
+                    pass
+
                 if with_hook:
                     self._run_after_hooks(ret)
         finally:
