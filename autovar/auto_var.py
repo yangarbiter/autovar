@@ -213,6 +213,7 @@ class AutoVar(object):
                 start_time = time.time()
                 ret = experiment_fn(self)
                 end_time = time.time()
+                logger.info("Running time: %f", end_time - start_time)
                 if isinstance(ret, dict):
                     ret['running_time'] = end_time - start_time
                 else:
