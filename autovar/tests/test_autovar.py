@@ -73,9 +73,9 @@ class TestAutovar(unittest.TestCase):
 
         self.assertEqual(auto_var.get_var('ord'), 1)
         self.assertEqual(auto_var.get_var('random_seed'), 1126)
-        self.assertEqual(len(auto_var.get_var('dataset')[0]), 200) 
+        self.assertEqual(len(auto_var.get_var('dataset')[0]), 200)
         self.assertEqual(
-            len(auto_var.get_var_with_argument('dataset', 'halfmoon_300')[0]), 300) 
+            len(auto_var.get_var_with_argument('dataset', 'halfmoon_300')[0]), 300)
 
         with self.assertRaises(ValueError):
             auto_var.set_variable_value_by_dict({'ord': 'l2'})
@@ -100,6 +100,7 @@ class TestAutovar(unittest.TestCase):
         params, results = auto_var.run_grid_params(fn, grid_params=grid_params, n_jobs=1)
 
         del results[0]['git_hash']
+        del results[0]['running_time']
         self.assertEqual(params[0], {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126})
         self.assertEqual(params[0], results[0])
 
