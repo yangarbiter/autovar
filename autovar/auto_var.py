@@ -18,9 +18,8 @@ from .base import default_fn_dict, default_val_dict, \
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.DEBUG,
+    level=logging.WARNING,
     datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
 
 
 def add_all_commit(repo, commit_msg="update"):
@@ -32,14 +31,18 @@ def add_all_commit(repo, commit_msg="update"):
 class AutoVar(object):
 
     def __init__(self, before_experiment_hooks=None, after_experiment_hooks=None,
-                settings: Dict=None, logging_level: int=logging.DEBUG) -> None:
+                 settings: Dict=None, logger: logging.Logger=None,
+                 logging_level: int=logging.WARNING) -> None:
         """
         settings : {
             'server_url': 'http://127.0.0.1:8080/nn_attack/',
             'result_file_dir': './results/'
         }
         """
-        logger.setLevel(logging_level)
+        if logger is None:
+            self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging_level)
+
         self.variables: Dict[str, dict] = {}
         self.var_class: Dict[str, Any] = {}
         self.var_value: Dict[str, Any] = {}
@@ -57,7 +60,7 @@ class AutoVar(object):
             self.repo = git.Repo(search_parent_directories=True)
             self.var_value['git_hash'] = self.repo.head.object.hexsha
         except git.exc.InvalidGitRepositoryError:
-            logger.warning("Git repository not found.")
+            self.logger.warning("Git repository not found.")
 
         self.after_experiment_hooks = after_experiment_hooks
         self.before_experiment_hooks = before_experiment_hooks
@@ -189,7 +192,8 @@ class AutoVar(object):
                 try:
                     hook_fn(self)
                 except ParameterAlreadyRanError:
-                    logger.warning("The result for this parameter is already ran.")
+                    self.logger.warning("The result for this parameter is "
+                                        "already ran.")
                     return False
                 except:
                     print("Error occur during running before hooks.")
@@ -214,7 +218,7 @@ class AutoVar(object):
                 start_time = time.time()
                 ret = experiment_fn(self)
                 end_time = time.time()
-                logger.info("Running time: %f", end_time - start_time)
+                self.logger.info("Running time: %f", end_time - start_time)
                 if isinstance(ret, dict):
                     ret['running_time'] = end_time - start_time
                 else:
@@ -281,14 +285,14 @@ class AutoVar(object):
         def _helper(auto_var, params):
             auto_var.set_variable_value_by_dict(params)
             if verbose:
-                logger.info("Running parameter:" + str(params))
+                self.logger.info("Running parameter:" + str(params))
             try:
                 results = auto_var.run_single_experiment(experiment_fn,
                                             with_hook=(with_hook and (not self._no_hooks)),
                                             verbose=verbose)
             except Exception as e:
                 if allow_failure:
-                    logger.error("Error with " + str(params))
+                    self.logger.error("Error with " + str(params))
                 else:
                     raise e
                 results = None
