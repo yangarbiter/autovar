@@ -18,7 +18,7 @@ from .base import default_fn_dict, default_val_dict, \
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.INFO,
+    level=logging.DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
@@ -32,13 +32,14 @@ def add_all_commit(repo, commit_msg="update"):
 class AutoVar(object):
 
     def __init__(self, before_experiment_hooks=None, after_experiment_hooks=None,
-                 settings: Dict = None) -> None:
+                settings: Dict=None, logging_level: int=logging.DEBUG) -> None:
         """
         settings : {
             'server_url': 'http://127.0.0.1:8080/nn_attack/',
             'result_file_dir': './results/'
         }
         """
+        logger.setLevel(logging_level)
         self.variables: Dict[str, dict] = {}
         self.var_class: Dict[str, Any] = {}
         self.var_value: Dict[str, Any] = {}

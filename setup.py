@@ -15,18 +15,18 @@ install_requires = [line.strip() for line in install_requires]
 
 setup(
     name='autovar',
-    version='0.0.1a0',
-    description='A sample Python project',
+    version='0.0.1a1',
+    description='Experiment variables management framework.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='',
+    url='https://github.com/yangarbiter/autovar/',
     author='Yao-Yuan Yang',
-    author_email='',
+    author_email='yangarbiter@gmail.com',
     classifiers=[
         'Development Status :: 3 - Alpha',
     ],
     keywords='',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=find_packages(exclude=[]),
     install_requires=install_requires,
     test_suit='autovar',
     extras_require={
