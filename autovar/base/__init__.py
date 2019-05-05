@@ -1,6 +1,6 @@
 """
 """
-from typing import Dict
+from typing import Dict, List
 from copy import deepcopy
 from .decorators import register_var
 
@@ -20,8 +20,9 @@ class VariableClass(object):
 
 class RegisteringChoiceType(type):
     def __init__(cls, name, bases, attrs):
-        cls.arguments = []
+        cls.arguments: List[str] = []
         cls.variables: Dict[str, dict] = {}
+        cls.variable_shown_name: Dict[str, Dict[str, str]] = {}
         if hasattr(cls, 'var_name') and cls.var_name is not None:
             name = cls.var_name
         elif not hasattr(cls, 'var_name'):
@@ -33,9 +34,10 @@ class RegisteringChoiceType(type):
             if prop is not None:
                 var_name = name if not prop['var_name'] else prop['var_name']
                 argument = key if not prop['argument'] else prop['argument']
-                #variables.setdefault(var_name, deepcopy(default_fn_dict))["argument_fn"][argument] = val.__func__
+                shown_name = key if not prop['shown_name'] else prop['shown_name']
                 cls.variables.setdefault(var_name, deepcopy(default_fn_dict))["argument_fn"][argument] = val.__func__
                 cls.arguments.append(argument)
+                cls.variable_shown_name.setdefault(var_name, dict())[argument] = shown_name
 
 class ParameterAlreadyRanError(Exception):
     def __init__(self, message="", errors=""):

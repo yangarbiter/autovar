@@ -14,7 +14,8 @@ from mkdir_p import mkdir_p
 from joblib import Parallel, delayed
 
 from .base import default_fn_dict, default_val_dict, \
-        ParameterAlreadyRanError, VariableValueNotSetError, VariableNotRegisteredError
+        ParameterAlreadyRanError, VariableValueNotSetError, \
+        VariableNotRegisteredError
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -42,6 +43,7 @@ class AutoVar(object):
         logger.setLevel(logging_level)
 
         self.variables: Dict[str, dict] = {}
+        self.variable_shown_name: Dict[str, Dict[str, str]] = {}
         self.var_class: Dict[str, Any] = {}
         self.var_value: Dict[str, Any] = {}
         self.inter_var: Dict[str, Any] = {}
@@ -80,11 +82,22 @@ class AutoVar(object):
         self.var_class[var_name] = variable_class
         #self.variables.setdefault(var_name, deepcopy(default_fn_dict))
         self.variables.update(variable_class.__class__.variables)
+        self.variable_shown_name.update(
+                variable_class.__class__.variable_shown_name)
 
     def add_variable(self, var_name: str, dtype) -> None:
         d = deepcopy(default_val_dict)
         d['dtype'] = dtype
         self.variables.setdefault(var_name, d)
+
+    def get_var_shown_name(self, var_name: str,
+                           argument: Union[str, None] = None) -> str:
+        if argument is None:
+            argument = self.get_variable_name(var_name)
+        # TODO maybe only re.sub when matched?
+        for key, val in self.variable_shown_name[var_name].items():
+            argument = re.sub(key, val, argument)
+        return argument
 
     def get_var(self, var_name: str, *args, **kwargs):
         """[summary]
@@ -143,6 +156,12 @@ class AutoVar(object):
         return None
 
     def get_variable_value(self, var_name: str):
+        logger.warn("Use get_variable_name instead.")
+        if var_name not in self.var_value:
+            raise ValueError(f"{var_name} not in var_value")
+        return self.var_value[var_name]
+
+    def get_variable_name(self, var_name: str):
         if var_name not in self.var_value:
             raise ValueError(f"{var_name} not in var_value")
         return self.var_value[var_name]

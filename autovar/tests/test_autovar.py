@@ -10,7 +10,8 @@ from autovar.base import RegisteringChoiceType, VariableClass, \
 class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
     var_name = 'dataset'
 
-    @register_var(argument=r"halfmoon_(?P<n_samples>\d+)")
+    @register_var(argument=r"halfmoon_(?P<n_samples>\d+)",
+                  shown_name="shown_halfmoon")
     @staticmethod
     def halfmoon(auto_var, var_value, inter_var, n_samples):
         X, y = make_moons(
@@ -83,6 +84,9 @@ class TestAutovar(unittest.TestCase):
         with self.assertRaises(TypeError):
             auto_var.set_variable_value_by_dict({'random_seed': '1126.0'})
 
+        self.assertEqual(
+            auto_var.get_var_shown_name(var_name="dataset"),
+            'shown_halfmoon')
 
     def test_run_grid(self):
         auto_var = AutoVar()
@@ -97,13 +101,15 @@ class TestAutovar(unittest.TestCase):
         }
         def fn(auto_var):
             return auto_var.var_value
-        params, results = auto_var.run_grid_params(fn, grid_params=grid_params, n_jobs=1)
+        params, results = auto_var.run_grid_params(
+                fn, grid_params=grid_params, n_jobs=1)
 
         del results[0]['git_hash']
         del results[0]['running_time']
-        self.assertEqual(params[0], {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126})
+        self.assertEqual(
+            params[0],
+            {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126})
         self.assertEqual(params[0], results[0])
-
 
 
 if __name__ == '__main__':
