@@ -4,6 +4,7 @@ import pprint
 import base64
 import logging
 import argparse
+from argparse import RawTextHelpFormatter
 import re
 import time
 
@@ -43,9 +44,11 @@ class AutoVar(object):
         logger.setLevel(logging_level)
 
         self.variables: Dict[str, dict] = {}
-        self.variable_shown_name: Dict[str, Dict[str, str]] = {}
+        self.var_shown_name: Dict[str, Dict[str, str]] = {}
+        self.var_description: Dict[str, str] = {}
         self.var_class: Dict[str, Any] = {}
         self.var_value: Dict[str, Any] = {}
+
         self.inter_var: Dict[str, Any] = {}
         self.result_fields: List[str] = []
         self.settings: Dict
@@ -82,7 +85,7 @@ class AutoVar(object):
         self.var_class[var_name] = variable_class
         #self.variables.setdefault(var_name, deepcopy(default_fn_dict))
         self.variables.update(variable_class.__class__.variables)
-        self.variable_shown_name.update(
+        self.var_shown_name.update(
                 variable_class.__class__.variable_shown_name)
 
     def add_variable(self, var_name: str, dtype) -> None:
@@ -95,7 +98,7 @@ class AutoVar(object):
         if argument is None:
             argument = self.get_variable_name(var_name)
         # TODO maybe only re.sub when matched?
-        for key, val in self.variable_shown_name[var_name].items():
+        for key, val in self.var_shown_name[var_name].items():
             argument = re.sub(key, val, argument)
         return argument
 
@@ -333,8 +336,8 @@ class AutoVar(object):
         _ = hash(tuple(sorted(self.var_value.items())))
         return base64.b64encode(str(_).encode()).decode()
 
-    def parse_argparse(self, args: Optional[List[str]]=None):
-        parser = argparse.ArgumentParser()
+    def get_argparser(self) -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
         parser.add_argument('--no-hooks', required=False, action='store_true',
                             help="run without the hooks")
 
@@ -342,10 +345,19 @@ class AutoVar(object):
             if v['type'] == 'choice':
                 #parser.add_argument(f'--{k}', type=str, required=True,
                 #    choices=[kk for kk, _ in v['argument_fn'].items()])
+                help_str = "Some of the options:\n"
+                help_str += "\n".join(
+                    ["  %s: %s" % (kk, vv.__doc__) for kk, vv in v['argument_fn'].items()])
                 parser.add_argument(f'--{var_name}', type=str, required=True,
-                                    action=make_action(self, var_name))
+                                    action=make_action(self, var_name),
+                                    help=help_str)
             else:
                 parser.add_argument(f'--{var_name}', type=v['dtype'], required=True)
+
+        return parser
+
+    def parse_argparse(self, args: Optional[List[str]]=None):
+        parser = self.get_argparser()
         parsed_args = parser.parse_args(args=args)
         self._no_hooks = parsed_args.no_hooks
 

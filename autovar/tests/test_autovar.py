@@ -10,10 +10,10 @@ from autovar.base import RegisteringChoiceType, VariableClass, \
 class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
     var_name = 'dataset'
 
-    @register_var(argument=r"halfmoon_(?P<n_samples>\d+)",
-                  shown_name="shown_halfmoon")
+    @register_var(argument=r"halfmoon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
     @staticmethod
     def halfmoon(auto_var, var_value, inter_var, n_samples):
+        """halfmoon dataset"""
         X, y = make_moons(
             n_samples=int(n_samples),
             noise=0.3,
@@ -87,6 +87,9 @@ class TestAutovar(unittest.TestCase):
         self.assertEqual(
             auto_var.get_var_shown_name(var_name="dataset"),
             'shown_halfmoon')
+
+        argparse_help = auto_var.get_argparser().format_help()
+        self.assertTrue('halfmoon dataset' in argparse_help)
 
     def test_run_grid(self):
         auto_var = AutoVar()
