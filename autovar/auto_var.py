@@ -1,18 +1,19 @@
-from copy import deepcopy
-from typing import Dict, Tuple, List, Any, Callable, Optional, Union
-import pprint
-import base64
-import logging
 import argparse
 from argparse import RawTextHelpFormatter
-import re
+import base64
+from copy import deepcopy
+import inspect
 import time
+from typing import Dict, Tuple, List, Any, Callable, Optional, Union
+import re
+import pprint
+import logging
 
 import git
 import git.exc
-from sklearn.model_selection import ParameterGrid
-from mkdir_p import mkdir_p
 from joblib import Parallel, delayed
+from mkdir_p import mkdir_p
+from sklearn.model_selection import ParameterGrid
 
 from .base import default_fn_dict, default_val_dict, \
         ParameterAlreadyRanError, VariableValueNotSetError, \
@@ -135,11 +136,15 @@ class AutoVar(object):
                         kwargs.update(m.groupdict())
                         break
                 if m is None:
-                    raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
+                    raise ValueError('Argument "%s" not matched in Variable '
+                                     '"%s".' % (argument, var_name))
 
             kwargs['auto_var'] = self
-            kwargs['var_value'] = self.var_value
-            kwargs['inter_var'] = self.inter_var
+            named_args = inspect.getfullargspec(func)[0]
+            if 'var_value' in named_args:
+                kwargs['var_value'] = self.var_value
+            if 'inter_var' in named_args:
+                kwargs['inter_var'] = self.inter_var
             return func(*args, **kwargs)
 
     def match_variable(self, var_name: str, argument):
@@ -185,8 +190,11 @@ class AutoVar(object):
                 if m is None:
                     raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
             kwargs['auto_var'] = self
-            kwargs['var_value'] = self.var_value
-            kwargs['inter_var'] = self.inter_var
+            named_args = inspect.getfullargspec(func)[0]
+            if 'var_value' in named_args:
+                kwargs['var_value'] = self.var_value
+            if 'inter_value' in named_args:
+                kwargs['inter_var'] = self.inter_var
             return func(*args, **kwargs)
 
     def get_intermidiate_variable(self, var_name: str):
@@ -343,9 +351,10 @@ class AutoVar(object):
 
         for var_name, v in self.variables.items():
             if v['type'] == 'choice':
-                #parser.add_argument(f'--{k}', type=str, required=True,
-                #    choices=[kk for kk, _ in v['argument_fn'].items()])
-                help_str = "Some of the options:\n"
+                help_str = ''
+                if self.var_class[var_name].__doc__ is not None:
+                    help_str += self.var_class[var_name].__doc__ + "\n"
+                help_str += "Options:\n"
                 help_str += "\n".join(
                     ["  %s: %s" % (kk, vv.__doc__) for kk, vv in v['argument_fn'].items()])
                 parser.add_argument(f'--{var_name}', type=str, required=True,

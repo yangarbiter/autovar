@@ -8,11 +8,12 @@ from autovar.base import RegisteringChoiceType, VariableClass, \
     register_var, VariableNotRegisteredError, VariableValueNotSetError
 
 class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
+    """Dataset variable class"""
     var_name = 'dataset'
 
     @register_var(argument=r"halfmoon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
     @staticmethod
-    def halfmoon(auto_var, var_value, inter_var, n_samples):
+    def halfmoon(auto_var, var_value, n_samples):
         """halfmoon dataset"""
         X, y = make_moons(
             n_samples=int(n_samples),
@@ -26,7 +27,7 @@ class OrdVarClass(VariableClass, metaclass=RegisteringChoiceType):
 
     @register_var(argument='2')
     @staticmethod
-    def l2(auto_var, var_value, inter_var):
+    def l2(auto_var):
         return 2
 
     @register_var(argument='1')
@@ -90,6 +91,7 @@ class TestAutovar(unittest.TestCase):
 
         argparse_help = auto_var.get_argparser().format_help()
         self.assertTrue('halfmoon dataset' in argparse_help)
+        self.assertTrue('Dataset variable class' in argparse_help)
 
     def test_run_grid(self):
         auto_var = AutoVar()
