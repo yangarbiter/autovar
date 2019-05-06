@@ -193,7 +193,7 @@ class AutoVar(object):
             named_args = inspect.getfullargspec(func)[0]
             if 'var_value' in named_args:
                 kwargs['var_value'] = self.var_value
-            if 'inter_value' in named_args:
+            if 'inter_var' in named_args:
                 kwargs['inter_var'] = self.inter_var
             return func(*args, **kwargs)
 
