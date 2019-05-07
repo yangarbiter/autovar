@@ -22,6 +22,17 @@ class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
         )
         return X, y
 
+    @register_var(argument=r"no2_halfmoon_(?P<n_samples>\d+)", shown_name="no2_halfmoon")
+    @staticmethod
+    def no2_halfmoon(auto_var, var_value, n_samples):
+        """no2 halfmoon dataset"""
+        X, y = make_moons(
+            n_samples=int(n_samples),
+            noise=0.2,
+            random_state=1126,
+        )
+        return X, y
+
 class OrdVarClass(VariableClass, metaclass=RegisteringChoiceType):
     var_name = "ord"
 
