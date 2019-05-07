@@ -38,5 +38,5 @@ script:
   - coverage run --source autovar setup.py test
   - coverage report
 after_success:
-  - pylint libact
+  - pylint autovar
   - codecov
