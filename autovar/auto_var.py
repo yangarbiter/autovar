@@ -100,7 +100,8 @@ class AutoVar(object):
             argument = self.get_variable_name(var_name)
         # TODO maybe only re.sub when matched?
         for key, val in self.var_shown_name[var_name].items():
-            argument = re.sub(key, val, argument)
+            if re.fullmatch(key, argument):
+                argument = re.sub(key, val, argument)
         return argument
 
     def get_var(self, var_name: str, *args, **kwargs):
