@@ -30,8 +30,10 @@ class RegisteringChoiceType(type):
             cls.var_name = name
 
         for key, val in attrs.items():
-            prop = getattr(val, 'register', None)
-            if prop is not None:
+            props = getattr(val, 'registers', None)
+            if props is None:
+                continue
+            for prop in props:
                 var_name = name if not prop['var_name'] else prop['var_name']
                 argument = key if not prop['argument'] else prop['argument']
                 shown_name = key if not prop['shown_name'] else prop['shown_name']

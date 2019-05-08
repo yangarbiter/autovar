@@ -8,12 +8,16 @@ def register_var(var_type: str = 'fn_name', var_name: str = None,
         argument {[type]} -- [description]
     """
     def decorator(func):
-        func.register = {
+        data = {
             'var_type': var_type,
             'var_name': var_name,
             'argument': argument,
             'shown_name': shown_name,
         }
+        if hasattr(func, 'registers'):
+            func.registers.append(data)
+        else:
+            func.registers = [data]
         return func
     return decorator
 

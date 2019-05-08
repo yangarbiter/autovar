@@ -1,6 +1,7 @@
 import unittest
 import argparse
 
+from numpy.testing import assert_array_equal
 from sklearn.datasets import make_moons
 
 from autovar import AutoVar
@@ -11,6 +12,7 @@ class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
     """Dataset variable class"""
     var_name = 'dataset'
 
+    @register_var(argument=r"moon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
     @register_var(argument=r"halfmoon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
     @staticmethod
     def halfmoon(auto_var, var_value, n_samples):
@@ -100,6 +102,10 @@ class TestAutovar(unittest.TestCase):
             auto_var.get_var_shown_name(var_name="dataset"),
             'shown_halfmoon')
 
+        assert_array_equal(
+            auto_var.get_var_with_argument('dataset', 'halfmoon_300')[0],
+            auto_var.get_var_with_argument('dataset', 'moon_300')[0],
+        )
         argparse_help = auto_var.get_argparser().format_help()
         self.assertTrue('halfmoon dataset' in argparse_help)
         self.assertTrue('Dataset variable class' in argparse_help)

@@ -98,7 +98,6 @@ class AutoVar(object):
                            argument: Union[str, None] = None) -> str:
         if argument is None:
             argument = self.get_variable_name(var_name)
-        # TODO maybe only re.sub when matched?
         for key, val in self.var_shown_name[var_name].items():
             if re.fullmatch(key, argument):
                 argument = re.sub(key, val, argument)
