@@ -72,7 +72,7 @@ class AutoVar(object):
         self._read_only: bool = False
         self._no_hooks: bool = False
 
-    def set_logging_level(self, level:int):
+    def set_logging_level(self, level: int):
         logger.setLevel(level)
 
     def add_variable_class(self, variable_class, var_name: str = None):
@@ -171,7 +171,7 @@ class AutoVar(object):
 
     def get_variable_name(self, var_name: str):
         if var_name not in self.var_value:
-            raise ValueError(f"{var_name} not in var_value")
+            raise ValueError(f"{var_name} not in variable name")
         return self.var_value[var_name]
 
     def get_var_with_argument(self, var_name: str, argument: str, *args, **kwargs):
@@ -203,8 +203,8 @@ class AutoVar(object):
     def set_variable_value(self, var_name: str, value) -> None:
         if self._read_only:
             raise ValueError("should not set variable value while read_only")
-        if var_name not in self.var_value:
-            pass
+        #if var_name not in self.var_value:
+        #    raise ValueError(f"{var_name} not in var_value")
         self.var_value[var_name] = value
         self._check_var_argument(var_name=var_name, argument=value)
 
@@ -318,9 +318,11 @@ class AutoVar(object):
             if verbose:
                 logger.info("Running parameter:" + str(params))
             try:
-                results = auto_var.run_single_experiment(experiment_fn,
-                                            with_hook=(with_hook and (not self._no_hooks)),
-                                            verbose=verbose)
+                results = auto_var.run_single_experiment(
+                    experiment_fn,
+                    with_hook=(with_hook and (not self._no_hooks)),
+                    verbose=verbose
+                )
             except Exception as e:
                 if allow_failure:
                     logger.error("Error with " + str(params))
