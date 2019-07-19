@@ -8,6 +8,7 @@ from typing import Dict, Tuple, List, Any, Callable, Optional, Union
 import re
 import pprint
 import logging
+import gc
 
 import git
 import git.exc
@@ -261,6 +262,7 @@ class AutoVar(object):
         finally:
             self.inter_var.clear()
             self._read_only = False
+            gc.collect()
         return ret
 
     def _check_var_argument(self, var_name: str, argument):
