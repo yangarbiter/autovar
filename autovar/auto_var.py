@@ -45,6 +45,7 @@ class AutoVar(object):
         """
         logger.setLevel(logging_level)
 
+        self.experiments: Dict[str, Any] = {}
         self.variables: Dict[str, dict] = {}
         self.var_shown_name: Dict[str, Dict[str, str]] = {}
         self.var_description: Dict[str, str] = {}
@@ -348,10 +349,28 @@ class AutoVar(object):
         _ = hash(tuple(sorted(self.var_value.items())))
         return base64.b64encode(str(_).encode()).decode()
 
+    def register_experiment(self, experiment_name: str,
+                               experiment_fn: Callable[..., Any],
+                               settings: Dict = None) -> None:
+        if experiment_name in self.experiments:
+            logger.info(f"Overriding experiment {experiment_name}")
+        if settings is None:
+            settings = dict()
+        self.experiments[experiment_name] = {
+            "fn": experiment_fn,
+            "settings": settings,
+        }
+
+
     def get_argparser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
         parser.add_argument('--no-hooks', required=False, action='store_true',
                             help="run without the hooks")
+
+        if len(self.experiments) > 0:
+            parser.add_argument('--experiment', type=str, required=True,
+                                choices=[k for k in self.experiments.keys()],
+                                help="The experiment to run")
 
         for var_name, v in self.variables.items():
             if v['type'] == 'choice':
@@ -376,7 +395,18 @@ class AutoVar(object):
 
         variables = vars(parsed_args)
         del variables['no_hooks']
+        experiment_name = variables.pop('experiment', None)
         self.set_variable_value_by_dict(variables)
+
+        if experiment_name:
+            original_settings = deepcopy(self.settings)
+            self.settings.update(self.experiments[experiment_name]['settings'])
+            ret = self.run_single_experiment(self.experiments[experiment_name]['fn'])
+            self.settings = original_settings
+            return ret
+
+        return None
+
 
 
 def make_action(auto_var, var_name):
