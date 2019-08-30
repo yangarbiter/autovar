@@ -41,6 +41,7 @@ class AutoVar(object):
         settings : {
             'server_url': 'http://127.0.0.1:8080/nn_attack/',
             'result_file_dir': './results/'
+            'file_format': 'json' or 'pickle'
         }
         """
         logger.setLevel(logging_level)
@@ -55,10 +56,9 @@ class AutoVar(object):
         self.inter_var: Dict[str, Any] = {}
         self.result_fields: List[str] = []
         self.settings: Dict
-        if settings is None:
-            self.settings = {}
-        else:
-            self.settings = settings
+        self.settings = {'file_format': 'json'}
+        if isinstance(settings, dict):
+            self.settings.update(settings)
         if ('result_file_dir' in self.settings) and self.settings['result_file_dir']:
             mkdir_p(self.settings['result_file_dir'])
 
