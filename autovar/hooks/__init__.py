@@ -19,7 +19,7 @@ def get_ext(file_format: str) -> str:
     if file_format == 'json':
         return 'json'
     elif file_format == 'pickle': 
-        return 'json'
+        return 'pkl'
     else:
         raise ValueError(f"Not supported file format {file_format}")
 
