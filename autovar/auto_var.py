@@ -133,7 +133,7 @@ class AutoVar(object):
             else:
                 m = None
                 for arg_template, func in self.variables[var_name]["argument_fn"].items():
-                    m = re.match(arg_template, argument)
+                    m = re.fullmatch(arg_template, argument)
                     if m is not None:
                         kwargs.update(m.groupdict())
                         break
@@ -160,7 +160,7 @@ class AutoVar(object):
                 return True
             else:
                 for arg_template in self.variables[var_name]["argument_fn"]:
-                    m = re.match(arg_template, argument)
+                    m = re.fullmatch(arg_template, argument)
                     if m is not None:
                         return True
         return None
@@ -185,7 +185,7 @@ class AutoVar(object):
             else:
                 m = None
                 for arg_template, func in self.variables[var_name]["argument_fn"].items():
-                    m = re.match(arg_template, argument)
+                    m = re.fullmatch(arg_template, argument)
                     if m is not None:
                         kwargs.update(m.groupdict())
                         break
