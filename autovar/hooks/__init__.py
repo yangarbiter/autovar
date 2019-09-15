@@ -36,8 +36,10 @@ def check_result_file_exist(auto_var, get_name_fn=None):
         get_name_fn = lambda x: x.generate_name()
     unique_name = get_name_fn(auto_var)
     unique_name = f'{unique_name}.{get_ext(auto_var.settings["file_format"])}'
-    if os.path.exists(unique_name):
-        raise ParameterAlreadyRanError("%s exists" % unique_name)
+    base_dir = auto_var.settings['result_file_dir']
+    file_path = os.path.join(base_dir, unique_name)
+    if os.path.exists(file_path):
+        raise ParameterAlreadyRanError("%s exists" % file_path)
 
 def save_result_to_file(auto_var, ret, get_name_fn=None):
     if get_name_fn is None:
