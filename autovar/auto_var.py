@@ -238,10 +238,14 @@ class AutoVar(object):
             for hook_fn in self.after_experiment_hooks:
                 hook_fn(self, ret)
 
-    def run_single_experiment(self, experiment_fn: Callable[..., Any],
+    def run_single_experiment(self, experiment_fn: Union[Callable[..., Any], str],
                               with_hook: bool=True,
                               verbose: int=0) -> bool:
         self._read_only = True
+        if isinstance(experiment_fn, str):
+            original_settings = deepcopy(self.settings)
+            self.settings.update(self.experiments[experiment_fn]['settings'])
+
         try:
             if with_hook:
                 ret = self._run_before_hooks()
@@ -249,7 +253,10 @@ class AutoVar(object):
                 ret = True
             if ret:
                 start_time = time.time()
-                ret = experiment_fn(self)
+                if isinstance(experiment_fn, str):
+                    ret = self.experiments[experiment_fn]['fn'](self)
+                else:
+                    ret = experiment_fn(self)
                 end_time = time.time()
                 logger.info("Running time: %f", end_time - start_time)
                 if isinstance(ret, dict):
@@ -264,6 +271,9 @@ class AutoVar(object):
             self.inter_var.clear()
             self._read_only = False
             gc.collect()
+
+        if isinstance(experiment_fn, str):
+            self.settings = original_settings
         return ret
 
     def _check_var_argument(self, var_name: str, argument):
@@ -284,7 +294,7 @@ class AutoVar(object):
         return True
 
     def run_grid_params(self,
-                        experiment_fn: Callable[..., Any],
+                        experiment_fn: Union[Callable[..., Any], str],
                         grid_params: Union[Dict[str, List], List[Dict[str, List]]],
                         with_hook: bool=True,
                         max_params: int=-1,
@@ -399,10 +409,7 @@ class AutoVar(object):
         self.set_variable_value_by_dict(variables)
 
         if experiment_name:
-            original_settings = deepcopy(self.settings)
-            self.settings.update(self.experiments[experiment_name]['settings'])
-            ret = self.run_single_experiment(self.experiments[experiment_name]['fn'])
-            self.settings = original_settings
+            ret = self.run_single_experiment(experiment_name, with_hook=(not self._no_hooks))
             return ret
 
         return None

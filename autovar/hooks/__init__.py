@@ -39,6 +39,7 @@ def check_result_file_exist(auto_var, get_name_fn=None):
     base_dir = auto_var.settings['result_file_dir']
     file_path = os.path.join(base_dir, unique_name)
     if os.path.exists(file_path):
+        _logger.warning(f"{file_path} exists")
         raise ParameterAlreadyRanError("%s exists" % file_path)
 
 def save_result_to_file(auto_var, ret, get_name_fn=None):
