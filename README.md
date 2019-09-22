@@ -6,5 +6,5 @@
 
 
 ```
-pip install git+https://github.com/yangarbiter/autovar.git
+pip install --upgrade git+https://github.com/yangarbiter/autovar.git
 ```
