@@ -51,6 +51,10 @@ def create_placeholder_file(auto_var, get_name_fn=None):
     file_path = os.path.join(base_dir, unique_name)
     with open(file_path, "w") as f:
         f.write("placeholder, programe still running")
+        
+def remove_placeholder_ifundone(auto_var, get_name_fn=None):
+    # TODO
+    pass
 
 def save_result_to_file(auto_var, ret, get_name_fn=None):
     if get_name_fn is None:
