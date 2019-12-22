@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 def get_ext(file_format: str) -> str:
     if file_format == 'json':
         return 'json'
-    elif file_format == 'pickle': 
+    elif file_format == 'pickle':
         return 'pkl'
     else:
         raise ValueError(f"Not supported file format {file_format}")
@@ -33,7 +33,7 @@ def default_get_file_name(auto_var: AutoVar) -> str:
 
 def check_result_file_exist(auto_var, get_name_fn=None):
     if get_name_fn is None:
-        get_name_fn = lambda x: x.generate_name()
+        get_name_fn = default_get_file_name
     unique_name = get_name_fn(auto_var)
     unique_name = f'{unique_name}.{get_ext(auto_var.settings["file_format"])}'
     base_dir = auto_var.settings['result_file_dir']
@@ -42,10 +42,19 @@ def check_result_file_exist(auto_var, get_name_fn=None):
         _logger.warning(f"{file_path} exists")
         raise ParameterAlreadyRanError("%s exists" % file_path)
 
+def create_placeholder_file(auto_var, get_name_fn=None):
+    if get_name_fn is None:
+        get_name_fn = default_get_file_name
+    unique_name = get_name_fn(auto_var)
+    unique_name = f'{unique_name}.{get_ext(auto_var.settings["file_format"])}'
+    base_dir = auto_var.settings['result_file_dir']
+    file_path = os.path.join(base_dir, unique_name)
+    with open(file_path, "w") as f:
+        f.write("placeholder, programe still running")
+
 def save_result_to_file(auto_var, ret, get_name_fn=None):
     if get_name_fn is None:
-        get_name_fn = lambda x: x.generate_name()
-
+        get_name_fn = default_get_file_name
     base_dir = auto_var.settings['result_file_dir']
     file_format = auto_var.settings["file_format"]
     unique_name = get_name_fn(auto_var)
@@ -62,7 +71,7 @@ def save_result_to_file(auto_var, ret, get_name_fn=None):
 
 def save_parameter_to_file(auto_var, get_name_fn=None):
     if get_name_fn is None:
-        get_name_fn = lambda x: x.generate_name()
+        get_name_fn = default_get_file_name
 
     unique_name = get_name_fn(auto_var) + "_param"
     output_file = '%s.json' % unique_name
