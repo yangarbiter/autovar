@@ -1,6 +1,6 @@
 """
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
 from copy import deepcopy
 from .decorators import register_var
 
@@ -17,6 +17,7 @@ default_val_dict = {
 
 class VariableClass(object):
     var_name: str = ""
+    default: Optional[str] = None
 
 class RegisteringChoiceType(type):
     def __init__(cls, name, bases, attrs):

@@ -1,3 +1,5 @@
+import signal
+import sys
 import os
 import urllib.parse
 import tempfile

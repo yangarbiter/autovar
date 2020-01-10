@@ -91,6 +91,9 @@ class AutoVar(object):
         self.var_shown_name.update(
                 variable_class.__class__.variable_shown_name)
 
+        if variable_class.default is not None:
+            self._check_var_argument(var_name=var_name, argument=variable_class.default)
+
     def add_variable(self, var_name: str, dtype) -> None:
         d = deepcopy(default_val_dict)
         d['dtype'] = dtype
@@ -384,14 +387,16 @@ class AutoVar(object):
 
         for var_name, v in self.variables.items():
             if v['type'] == 'choice':
+                default = self.var_class[var_name].default
+                required = False if default is not None else True
                 help_str = ''
                 if self.var_class[var_name].__doc__ is not None:
                     help_str += self.var_class[var_name].__doc__ + "\n"
-                help_str += "Options:\n"
+                help_str += f"Options: (default: {default})\n"
                 help_str += "\n".join(
                     ["  %s: %s" % (kk, vv.__doc__) for kk, vv in v['argument_fn'].items()])
-                parser.add_argument(f'--{var_name}', type=str, required=True,
-                                    action=make_action(self, var_name),
+                parser.add_argument(f'--{var_name}', type=str, required=required,
+                                    action=make_action(self, var_name), default=default,
                                     help=help_str)
             else:
                 parser.add_argument(f'--{var_name}', type=v['dtype'], required=True)

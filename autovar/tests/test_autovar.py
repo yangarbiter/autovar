@@ -11,6 +11,7 @@ from autovar.base import RegisteringChoiceType, VariableClass, \
 class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
     """Dataset variable class"""
     var_name = 'dataset'
+    default = None
 
     @register_var(argument=r"moon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
     @register_var(argument=r"halfmoon_(?P<n_samples>\d+)", shown_name="shown_halfmoon")
@@ -37,6 +38,7 @@ class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
 
 class OrdVarClass(VariableClass, metaclass=RegisteringChoiceType):
     var_name = "ord"
+    default = "2"
 
     @register_var(argument='2')
     @staticmethod
@@ -49,6 +51,7 @@ class OrdVarClass(VariableClass, metaclass=RegisteringChoiceType):
         return 1
 
 class TestAutovar(unittest.TestCase):
+
     def setUp(self):
         pass
 
@@ -69,6 +72,18 @@ class TestAutovar(unittest.TestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
             args = ['--dataset', 'halfmaan_300']
             auto_var.parse_argparse(args=args)
+
+        with self.assertRaises(SystemExit) as cm:
+            args = []
+            auto_var.parse_argparse(args=args)
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_cmd_args_with_vars_2(self):
+        auto_var = AutoVar()
+        auto_var.add_variable_class(OrdVarClass())
+
+        auto_var.parse_argparse(args=[])
+        self.assertEqual(auto_var.get_var("ord"), 2)
 
     def test_val(self):
         auto_var = AutoVar()
@@ -94,6 +109,7 @@ class TestAutovar(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             auto_var.set_variable_value_by_dict({'ord': 'l2'})
+
 
         with self.assertRaises(TypeError):
             auto_var.set_variable_value_by_dict({'random_seed': '1126.0'})
