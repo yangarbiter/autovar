@@ -94,10 +94,13 @@ class AutoVar(object):
         if variable_class.default is not None:
             self._check_var_argument(var_name=var_name, argument=variable_class.default)
 
-    def add_variable(self, var_name: str, dtype) -> None:
+    def add_variable(self, var_name: str, dtype, default=None) -> None:
         d = deepcopy(default_val_dict)
         d['dtype'] = dtype
         self.variables.setdefault(var_name, d)
+        if default is not None:
+            self._check_var_argument(var_name=var_name, argument=default)
+            d['default'] = default
 
     def get_var_shown_name(self, var_name: str,
                            argument: Union[str, None] = None) -> str:
@@ -399,7 +402,8 @@ class AutoVar(object):
                                     action=make_action(self, var_name), default=default,
                                     help=help_str)
             else:
-                parser.add_argument(f'--{var_name}', type=v['dtype'], required=True)
+                default = v['default']
+                parser.add_argument(f'--{var_name}', type=v['dtype'], required=True, default=default)
 
         return parser
 
