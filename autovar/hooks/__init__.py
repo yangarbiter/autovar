@@ -52,11 +52,16 @@ def create_placeholder_file(auto_var, get_name_fn=None):
     base_dir = auto_var.settings['result_file_dir']
     file_path = os.path.join(base_dir, unique_name)
     with open(file_path, "w") as f:
-        f.write("placeholder, programe still running")
+        f.write("placeholder, program still running")
         
-def remove_placeholder_ifundone(auto_var, get_name_fn=None):
-    # TODO
-    pass
+def remove_placeholder_if_error(auto_var, ret, get_name_fn=None):
+    if ret is None:
+        unique_name = get_name_fn(auto_var)
+        unique_name = f'{unique_name}.{get_ext(auto_var.settings["file_format"])}'
+        base_dir = auto_var.settings['result_file_dir']
+        file_path = os.path.join(base_dir, unique_name)
+        _logger.warning(f"removing {file_path} ...")
+        os.unlink(file_path)
 
 def save_result_to_file(auto_var, ret, get_name_fn=None):
     if get_name_fn is None:

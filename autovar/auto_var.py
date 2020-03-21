@@ -254,10 +254,12 @@ class AutoVar(object):
 
         try:
             if with_hook:
-                ret = self._run_before_hooks()
+                ret_hook = self._run_before_hooks()
             else:
-                ret = True
-            if ret:
+                ret_hook = True
+
+            ret = None
+            if ret_hook:
                 start_time = time.time()
                 if isinstance(experiment_fn, str):
                     ret = self.experiments[experiment_fn]['fn'](self)
@@ -270,10 +272,9 @@ class AutoVar(object):
                 else:
                     # return value is not dict
                     pass
-
-                if with_hook:
-                    self._run_after_hooks(ret)
         finally:
+            if with_hook and ret_hook:
+                self._run_after_hooks(ret)
             self.inter_var.clear()
             self._read_only = False
             gc.collect()
