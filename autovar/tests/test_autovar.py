@@ -1,4 +1,5 @@
 import argparse
+import logging
 import tempfile
 import unittest
 
@@ -71,14 +72,14 @@ class TestAutovar(unittest.TestCase):
         pass
 
     def test_cmd_args(self):
-        auto_var = AutoVar()
+        auto_var = AutoVar(logging_level=logging.INFO)
         self.assertFalse(auto_var._no_hooks)
         args = ['--no-hooks']
         auto_var.parse_argparse(args=args)
         self.assertTrue(auto_var._no_hooks)
 
     def test_cmd_args_with_vars(self):
-        auto_var = AutoVar()
+        auto_var = AutoVar(logging_level=logging.INFO)
         auto_var.add_variable_class(DatasetVarClass())
 
         args = ['--dataset', 'halfmoon_300']
@@ -94,14 +95,14 @@ class TestAutovar(unittest.TestCase):
         self.assertEqual(cm.exception.code, 2)
 
     def test_cmd_args_with_vars_2(self):
-        auto_var = AutoVar()
+        auto_var = AutoVar(logging_level=logging.INFO)
         auto_var.add_variable_class(OrdVarClass())
 
         auto_var.parse_argparse(args=[])
         self.assertEqual(auto_var.get_var("ord"), 2)
 
     def test_cache_files(self):
-        auto_var = AutoVar()
+        auto_var = AutoVar(logging_level=logging.INFO)
         auto_var.add_variable_class(DatasetVarClass())
 
         auto_var.set_variable_value("dataset", "no4_halfmoon_5")
@@ -118,7 +119,7 @@ class TestAutovar(unittest.TestCase):
         assert_array_equal(y, cachey)
 
     def test_val(self):
-        auto_var = AutoVar()
+        auto_var = AutoVar(logging_level=logging.INFO)
         with self.assertRaises(VariableNotRegisteredError):
             auto_var.get_var('ord')
 
