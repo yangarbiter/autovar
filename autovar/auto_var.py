@@ -165,7 +165,7 @@ class AutoVar(object):
                 if required_vars is not None:
                     for var in required_vars:
                         var_used[var] = self.var_value[var]
-                required_variables = [v for k, v in sorted(var_used.items())]
+                required_variables = [str(v) for k, v in sorted(var_used.items())]
                 cache_filename = os.path.join(cache_dir, '-'.join(required_variables) + '.pkl')
 
                 if os.path.exists(cache_filename):
