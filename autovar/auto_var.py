@@ -161,12 +161,12 @@ class AutoVar(object):
 
             if cache_dir is not None:
                 mkdir_p(cache_dir)
-                required_vars = {var_name: self.var_value[var_name]}
+                var_used = {var_name: self.var_value[var_name]}
                 if required_vars is not None:
                     for var in required_vars:
-                        required_vars[var] = self.var_value[var]
-                required_vars = [v for k, v in sorted(required_vars.items())]
-                cache_filename = os.path.join(cache_dir, '-'.join(required_vars) + '.pkl')
+                        var_used[var] = self.var_value[var]
+                var_used = [v for k, v in sorted(var_used.items())]
+                cache_filename = os.path.join(cache_dir, '-'.join(var_used) + '.pkl')
 
                 if os.path.exists(cache_filename):
                     try:

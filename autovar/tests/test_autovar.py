@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os.path
 import tempfile
 import unittest
 
@@ -8,7 +9,7 @@ from sklearn.datasets import make_moons
 import joblib
 
 from autovar import AutoVar
-from autovar.base.decorators import cache_outputs
+from autovar.base.decorators import cache_outputs, requires
 from autovar.base import RegisteringChoiceType, VariableClass, \
     register_var, VariableNotRegisteredError, VariableValueNotSetError
 
@@ -41,6 +42,7 @@ class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
         return X, y
 
     @cache_outputs(cache_dir=tempfile.TemporaryDirectory().name)
+    @requires(['ord'])
     @register_var(argument=r"no4_halfmoon_(?P<n_samples>\d+)", shown_name="no4_halfmoon")
     @staticmethod
     def no4_halfmoon(auto_var, var_value, n_samples):
@@ -104,8 +106,10 @@ class TestAutovar(unittest.TestCase):
     def test_cache_files(self):
         auto_var = AutoVar(logging_level=logging.INFO)
         auto_var.add_variable_class(DatasetVarClass())
+        auto_var.add_variable_class(OrdVarClass())
 
         auto_var.set_variable_value("dataset", "no4_halfmoon_5")
+        auto_var.set_variable_value("ord", "1")
         X, y = auto_var.get_var("dataset")
         cacheX, cachey = auto_var.get_var("dataset")
 
@@ -114,7 +118,7 @@ class TestAutovar(unittest.TestCase):
 
         temp_dir = auto_var.variables['dataset']['cache_dirs']['no4_halfmoon_(?P<n_samples>\\d+)']
 
-        cacheX, cachey = joblib.load("/tmp/no4_halfmoon_5.pkl")
+        cacheX, cachey = joblib.load(os.path.join(temp_dir, "no4_halfmoon_5-1.pkl"))
         assert_array_equal(X, cacheX)
         assert_array_equal(y, cachey)
 
