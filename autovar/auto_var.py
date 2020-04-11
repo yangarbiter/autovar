@@ -165,20 +165,21 @@ class AutoVar(object):
                 if required_vars is not None:
                     for var in required_vars:
                         var_used[var] = self.var_value[var]
-                var_used = [v for k, v in sorted(var_used.items())]
-                cache_filename = os.path.join(cache_dir, '-'.join(var_used) + '.pkl')
+                required_variables = [v for k, v in sorted(var_used.items())]
+                cache_filename = os.path.join(cache_dir, '-'.join(required_variables) + '.pkl')
 
                 if os.path.exists(cache_filename):
                     try:
                         func_outputs = joblib.load(cache_filename)
+                        logger.info(f"using result from cache file {cache_filename} ...")
                     except:
                         os.unlink(cache_filename)
                         func_outputs = func(*args, **kwargs)
-                        logger.info(f"dumping cache file {cache_filename} ...")
+                        logger.info(f"dumping cache file to {cache_filename} ...")
                         joblib.dump(func_outputs, cache_filename)
                 else:
                     func_outputs = func(*args, **kwargs)
-                    logger.info(f"dumping cache file {cache_filename} ...")
+                    logger.info(f"dumping cache file to {cache_filename} ...")
                     joblib.dump(func_outputs, cache_filename)
             else:
                 func_outputs = func(*args, **kwargs)
