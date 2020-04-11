@@ -39,6 +39,8 @@ class RegisteringChoiceType(type):
                 argument = key if not prop['argument'] else prop['argument']
                 shown_name = key if not prop['shown_name'] else prop['shown_name']
                 cls.variables.setdefault(var_name, deepcopy(default_fn_dict))["argument_fn"][argument] = val.__func__
+                cls.variables[var_name].setdefault('required_vars', {})[argument] = prop['required_vars'] if 'required_vars' in prop else None
+                cls.variables[var_name].setdefault('cache_dirs', {})[argument] = prop['cache_dir'] if 'cache_dir' in prop else None
                 cls.arguments.append(argument)
                 cls.variable_shown_name.setdefault(var_name, dict())[argument] = shown_name
 

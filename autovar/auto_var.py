@@ -9,9 +9,11 @@ import re
 import pprint
 import logging
 import gc
+import os
 
 import git
 import git.exc
+import joblib
 from joblib import Parallel, delayed
 from mkdir_p import mkdir_p
 from sklearn.model_selection import ParameterGrid
@@ -134,6 +136,7 @@ class AutoVar(object):
         if self.variables[var_name]["type"] == "val":
             return argument
         else:
+            cache_dir = None
             if argument in self.variables[var_name]["argument_fn"]:
                 func = self.variables[var_name]["argument_fn"][argument]
             else:
@@ -142,6 +145,8 @@ class AutoVar(object):
                     m = re.fullmatch(arg_template, argument)
                     if m is not None:
                         kwargs.update(m.groupdict())
+                        cache_dir = self.variables[var_name]['cache_dirs'][arg_template]
+                        required_vars = self.variables[var_name]['required_vars'][arg_template]
                         break
                 if m is None:
                     raise ValueError('Argument "%s" not matched in Variable '
@@ -153,7 +158,32 @@ class AutoVar(object):
                 kwargs['var_value'] = self.var_value
             if 'inter_var' in named_args:
                 kwargs['inter_var'] = self.inter_var
-            return func(*args, **kwargs)
+
+            if cache_dir is not None:
+                mkdir_p(cache_dir)
+                required_vars = {var_name: self.var_value[var_name]}
+                if required_vars is not None:
+                    for var in required_vars:
+                        required_vars[var] = self.var_value[var]
+                required_vars = [v for k, v in sorted(required_vars.items())]
+                cache_filename = os.path.join(cache_dir, '-'.join(required_vars) + '.pkl')
+
+                if os.path.exists(cache_filename):
+                    try:
+                        func_outputs = joblib.load(cache_filename)
+                    except:
+                        os.unlink(cache_filename)
+                        func_outputs = func(*args, **kwargs)
+                        logger.info(f"dumping cache file {cache_filename} ...")
+                        joblib.dump(func_outputs, cache_filename)
+                else:
+                    func_outputs = func(*args, **kwargs)
+                    logger.info(f"dumping cache file {cache_filename} ...")
+                    joblib.dump(func_outputs, cache_filename)
+            else:
+                func_outputs = func(*args, **kwargs)
+
+            return func_outputs
 
     def match_variable(self, var_name: str, argument):
         if argument is None:
@@ -252,13 +282,13 @@ class AutoVar(object):
             original_settings = deepcopy(self.settings)
             self.settings.update(self.experiments[experiment_fn]['settings'])
 
+        ret = False
         try:
             if with_hook:
                 ret_hook = self._run_before_hooks()
             else:
                 ret_hook = True
 
-            ret = None
             if ret_hook:
                 start_time = time.time()
                 if isinstance(experiment_fn, str):
@@ -377,7 +407,6 @@ class AutoVar(object):
             "fn": experiment_fn,
             "settings": settings,
         }
-
 
     def get_argparser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)

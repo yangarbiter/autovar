@@ -1,10 +1,13 @@
-import unittest
 import argparse
+import tempfile
+import unittest
 
 from numpy.testing import assert_array_equal
 from sklearn.datasets import make_moons
+import joblib
 
 from autovar import AutoVar
+from autovar.base.decorators import cache_outputs
 from autovar.base import RegisteringChoiceType, VariableClass, \
     register_var, VariableNotRegisteredError, VariableValueNotSetError
 
@@ -32,6 +35,18 @@ class DatasetVarClass(VariableClass, metaclass=RegisteringChoiceType):
         X, y = make_moons(
             n_samples=int(n_samples),
             noise=0.2,
+            random_state=1126,
+        )
+        return X, y
+
+    @cache_outputs(cache_dir=tempfile.TemporaryDirectory().name)
+    @register_var(argument=r"no4_halfmoon_(?P<n_samples>\d+)", shown_name="no4_halfmoon")
+    @staticmethod
+    def no4_halfmoon(auto_var, var_value, n_samples):
+        """no2 halfmoon dataset"""
+        X, y = make_moons(
+            n_samples=int(n_samples),
+            noise=0.4,
             random_state=1126,
         )
         return X, y
@@ -84,6 +99,23 @@ class TestAutovar(unittest.TestCase):
 
         auto_var.parse_argparse(args=[])
         self.assertEqual(auto_var.get_var("ord"), 2)
+
+    def test_cache_files(self):
+        auto_var = AutoVar()
+        auto_var.add_variable_class(DatasetVarClass())
+
+        auto_var.set_variable_value("dataset", "no4_halfmoon_5")
+        X, y = auto_var.get_var("dataset")
+        cacheX, cachey = auto_var.get_var("dataset")
+
+        assert_array_equal(X, cacheX)
+        assert_array_equal(y, cachey)
+
+        temp_dir = auto_var.variables['dataset']['cache_dirs']['no4_halfmoon_(?P<n_samples>\\d+)']
+
+        cacheX, cachey = joblib.load("/tmp/no4_halfmoon_5.pkl")
+        assert_array_equal(X, cacheX)
+        assert_array_equal(y, cachey)
 
     def test_val(self):
         auto_var = AutoVar()
