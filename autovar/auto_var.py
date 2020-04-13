@@ -277,13 +277,13 @@ class AutoVar(object):
 
     def run_single_experiment(self, experiment_fn: Union[Callable[..., Any], str],
                               with_hook: bool=True,
-                              verbose: int=0) -> bool:
+                              verbose: int=0) -> Optional[bool]:
         self._read_only = True
         if isinstance(experiment_fn, str):
             original_settings = deepcopy(self.settings)
             self.settings.update(self.experiments[experiment_fn]['settings'])
 
-        ret = False
+        ret = None
         try:
             if with_hook:
                 ret_hook = self._run_before_hooks()
