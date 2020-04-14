@@ -15,7 +15,7 @@ install_requires = [line.strip() for line in install_requires]
 
 setup(
     name='autovar',
-    version='0.0.1a6',
+    version='0.0.1a7',
     description='Experiment variables management framework.',
     long_description=long_description,
     long_description_content_type='text/markdown',
