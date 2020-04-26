@@ -8,3 +8,6 @@
 ```
 pip install --upgrade git+https://github.com/yangarbiter/autovar.git
 ```
+
+
+A [template](https://github.com/yangarbiter/autovar_project_template) to start a project using autovar
