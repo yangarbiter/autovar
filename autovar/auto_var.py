@@ -284,12 +284,11 @@ class AutoVar(object):
             self.settings.update(self.experiments[experiment_fn]['settings'])
 
         ret = None
-        try:
-            if with_hook:
-                ret_hook = self._run_before_hooks()
-            else:
-                ret_hook = True
+        ret_hook = True
+        if with_hook:
+            ret_hook = self._run_before_hooks()
 
+        try:
             if ret_hook:
                 start_time = time.time()
                 if isinstance(experiment_fn, str):
