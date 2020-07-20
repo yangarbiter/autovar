@@ -175,15 +175,23 @@ class TestAutovar(unittest.TestCase):
             "random_seed": [1126],
         }
         def fn(auto_var):
-            return auto_var.var_value
+            return {
+                "ord": auto_var.var_value['ord'],
+                "dataset": auto_var.var_value['dataset'],
+                "random_seed": auto_var.var_value['random_seed'],
+            }
         params, results = auto_var.run_grid_params(
                 fn, grid_params=grid_params, n_jobs=1)
 
-        del results[0]['git_hash']
-        del results[0]['running_time']
         self.assertEqual(
             params[0],
-            {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126})
+            {'ord': '1', 'dataset': 'halfmoon_50', 'random_seed': 1126,})
+
+        del results[0]['var_value']['git_hash']
+        self.assertEqual(params[0], results[0]['var_value'])
+
+        del results[0]['running_time']
+        del results[0]['var_value']
         self.assertEqual(params[0], results[0])
 
 

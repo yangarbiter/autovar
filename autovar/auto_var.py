@@ -133,6 +133,38 @@ class AutoVar(object):
             raise VariableValueNotSetError('Value for variable "%s" is not assigned.' % var_name)
         argument = self.var_value[var_name]
 
+        return self.get_var_with_argument(
+                var_name=var_name, argument=argument, *args, **kwargs)
+
+
+    def match_variable(self, var_name: str, argument):
+        if argument is None:
+            return False
+
+        if self.variables[var_name]["type"] == "val":
+            return True
+        else:
+            if argument in self.variables[var_name]["argument_fn"]:
+                return True
+            else:
+                for arg_template in self.variables[var_name]["argument_fn"]:
+                    m = re.fullmatch(arg_template, argument)
+                    if m is not None:
+                        return True
+        return None
+
+    def get_variable_value(self, var_name: str):
+        logger.warn("Use get_variable_name instead.")
+        if var_name not in self.var_value:
+            raise ValueError(f"{var_name} not in var_value")
+        return self.var_value[var_name]
+
+    def get_variable_name(self, var_name: str):
+        if var_name not in self.var_value:
+            raise ValueError(f"{var_name} not in variable name")
+        return self.var_value[var_name]
+
+    def get_var_with_argument(self, var_name: str, argument: str, *args, **kwargs):
         if self.variables[var_name]["type"] == "val":
             return argument
         else:
@@ -187,56 +219,6 @@ class AutoVar(object):
                 func_outputs = func(*args, **kwargs)
 
             return func_outputs
-
-    def match_variable(self, var_name: str, argument):
-        if argument is None:
-            return False
-
-        if self.variables[var_name]["type"] == "val":
-            return True
-        else:
-            if argument in self.variables[var_name]["argument_fn"]:
-                return True
-            else:
-                for arg_template in self.variables[var_name]["argument_fn"]:
-                    m = re.fullmatch(arg_template, argument)
-                    if m is not None:
-                        return True
-        return None
-
-    def get_variable_value(self, var_name: str):
-        logger.warn("Use get_variable_name instead.")
-        if var_name not in self.var_value:
-            raise ValueError(f"{var_name} not in var_value")
-        return self.var_value[var_name]
-
-    def get_variable_name(self, var_name: str):
-        if var_name not in self.var_value:
-            raise ValueError(f"{var_name} not in variable name")
-        return self.var_value[var_name]
-
-    def get_var_with_argument(self, var_name: str, argument: str, *args, **kwargs):
-        if self.variables[var_name]["type"] == "val":
-            return argument
-        else:
-            if argument in self.variables[var_name]["argument_fn"]:
-                func = self.variables[var_name]["argument_fn"][argument]
-            else:
-                m = None
-                for arg_template, func in self.variables[var_name]["argument_fn"].items():
-                    m = re.fullmatch(arg_template, argument)
-                    if m is not None:
-                        kwargs.update(m.groupdict())
-                        break
-                if m is None:
-                    raise ValueError('Argument "%s" not matched in Variable "%s".' % (argument, var_name))
-            kwargs['auto_var'] = self
-            named_args = inspect.getfullargspec(func)[0]
-            if 'var_value' in named_args:
-                kwargs['var_value'] = self.var_value
-            if 'inter_var' in named_args:
-                kwargs['inter_var'] = self.inter_var
-            return func(*args, **kwargs)
 
     def get_intermidiate_variable(self, var_name: str):
         return self.inter_var[var_name]
@@ -304,7 +286,7 @@ class AutoVar(object):
                 else:
                     # return value is not dict
                     pass
-                ret['var_value'] = self.var_value
+                ret['var_value'] = deepcopy(self.var_value)
         finally:
             if with_hook and ret_hook:
                 self._run_after_hooks(ret)

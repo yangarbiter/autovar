@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional, Callable, Any
+from typing import Any, Callable, Dict, List, Optional, Union
+from ..auto_var import AutoVar
 
 class Experiments():
     name: str
