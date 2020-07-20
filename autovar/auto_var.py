@@ -139,6 +139,8 @@ class AutoVar(object):
             cache_dir = None
             if argument in self.variables[var_name]["argument_fn"]:
                 func = self.variables[var_name]["argument_fn"][argument]
+                cache_dir = self.variables[var_name]['cache_dirs'][argument]
+                required_vars = self.variables[var_name]['required_vars'][argument]
             else:
                 m = None
                 for arg_template, func in self.variables[var_name]["argument_fn"].items():
