@@ -304,6 +304,7 @@ class AutoVar(object):
                 else:
                     # return value is not dict
                     pass
+                ret['var_value'] = self.var_value
         finally:
             if with_hook and ret_hook:
                 self._run_after_hooks(ret)
