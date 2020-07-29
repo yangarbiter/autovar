@@ -309,8 +309,8 @@ class AutoVar(object):
                 raise ValueError('Argument "%s" not in Variable "%s".' % (argument, var_name))
         elif self.variables[var_name]["type"] == "val" \
             and not isinstance(argument, self.variables[var_name]['dtype']):
-            raise TypeError('Argument "%s" not in the correct type "%s".' % (
-                            type(argument), self.variables[var_name]['dtype']))
+            raise TypeError('Argument "%s" not in the correct type "%s" for Variable "%s".' % (
+                            type(argument), self.variables[var_name]['dtype'], var_name))
 
     def _check_grid_params(self, grid_params: Dict[str, List]) -> bool:
         # TODO check duplicated params
