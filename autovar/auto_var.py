@@ -130,8 +130,15 @@ class AutoVar(object):
         if var_name not in self.variables:
             raise VariableNotRegisteredError('Variable "%s" not registered.' % var_name)
         if var_name not in self.var_value:
-            raise VariableValueNotSetError('Value for variable "%s" is not assigned.' % var_name)
-        argument = self.var_value[var_name]
+            if self.variables[var_name]['type'] == 'choice':
+                if self.var_class[var_name].default is not None:
+                    argument = self.var_class[var_name].default
+            elif self.variables[var_name]['default'] is not None:
+                argument = self.variables[var_name]['default']
+            else:
+                raise VariableValueNotSetError('Value for variable "%s" is not assigned.' % var_name)
+        else:
+            argument = self.var_value[var_name]
 
         return self.get_var_with_argument(
                 var_name=var_name, argument=argument, *args, **kwargs)
