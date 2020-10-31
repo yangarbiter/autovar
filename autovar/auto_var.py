@@ -133,6 +133,8 @@ class AutoVar(object):
             if self.variables[var_name]['type'] == 'choice':
                 if self.var_class[var_name].default is not None:
                     argument = self.var_class[var_name].default
+                else:
+                    raise VariableValueNotSetError('Value for variable "%s" is not assigned.' % var_name)
             elif self.variables[var_name]['default'] is not None:
                 argument = self.variables[var_name]['default']
             else:
