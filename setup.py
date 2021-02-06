@@ -15,7 +15,7 @@ install_requires = [line.strip() for line in install_requires]
 
 setup(
     name='autovar',
-    version='0.0.1a7',
+    version='0.0.1a8',
     description='Experiment variables management framework.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -28,7 +28,7 @@ setup(
     keywords='',
     packages=find_packages(exclude=[]),
     install_requires=install_requires,
-    test_suit='autovar',
+    test_suite='autovar',
     extras_require={
         'dev': ['pylint'],
         'test': ['coverage', 'pylint', 'mypy'],
