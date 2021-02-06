@@ -432,7 +432,8 @@ class AutoVar(object):
                                     help=help_str)
             else:
                 default = v['default']
-                parser.add_argument(f'--{var_name}', type=v['dtype'], required=True, default=default)
+                required = False if default is not None else True
+                parser.add_argument(f'--{var_name}', type=v['dtype'], required=required, default=default)
 
         return parser
 
