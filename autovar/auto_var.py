@@ -278,6 +278,8 @@ class AutoVar(object):
                               verbose: int=0) -> Optional[bool]:
         self._read_only = True
         if isinstance(experiment_fn, str):
+            if experiment_fn not in self.experiments:
+                raise ValueError(f"experiment_fn {experiment_fn} is not a registered experiment")
             original_settings = deepcopy(self.settings)
             self.settings.update(self.experiments[experiment_fn]['settings'])
 
