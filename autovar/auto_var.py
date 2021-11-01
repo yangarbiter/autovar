@@ -10,6 +10,7 @@ import pprint
 import logging
 import gc
 import os
+import socket
 
 import git
 import git.exc
@@ -69,7 +70,12 @@ class AutoVar(object):
             self.var_value['git_hash'] = self.repo.head.object.hexsha
         except git.exc.InvalidGitRepositoryError:
             logger.warning("Git repository not found.")
-
+        
+        try:
+            self.var_value['hostname'] = socket.gethostname()
+        except:
+            logger.warning("Unable to get hostname.")
+                
         self.after_experiment_hooks = after_experiment_hooks
         self.before_experiment_hooks = before_experiment_hooks
 
