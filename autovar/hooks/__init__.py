@@ -28,7 +28,7 @@ def get_ext(file_format: str) -> str:
 def default_get_file_name(auto_var: AutoVar) -> str:
     file_name_list: List[str] = []
     for k, v in sorted(auto_var.var_value.items()):
-        if k != 'git_hash':
+        if k not in ['git_hash', 'hostname']:
             file_name_list.append(f"{str(v)}")
     file_name: str = '-'.join(file_name_list)
     return file_name
